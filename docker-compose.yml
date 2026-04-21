@@ -1,35 +1,35 @@
 services:
   mariadb:
-    image: mariadb:10.11
-    container_name: vgp-mariadb
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mariadb_data:/var/lib/mysql
-      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "3307:3306"
-    networks:
-      - vgp-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD:-VgpRoot2024!}",
-        ]
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+  image: mariadb:10.11
+  container_name: vgp-mariadb
+  restart: always
+  environment:
+    MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    MYSQL_DATABASE: ${MYSQL_DATABASE}
+    MYSQL_USER: ${MYSQL_USER}
+    MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  volumes:
+    - mariadb_data:/var/lib/mysql
+    - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
+  ports:
+    - "3307:3306"
+  networks:
+    - vgp-network
+  healthcheck:
+    test:
+      [
+        "CMD",
+        "mysqladmin",
+        "ping",
+        "-h",
+        "localhost",
+        "-u",
+        "${MYSQL_USER}",
+        "-p${MYSQL_PASSWORD}",
+      ]
+    timeout: 10s
+    retries: 5
+    start_period: 30s
 
   backend:
     build:
