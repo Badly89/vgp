@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: vgp-mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-VgpRoot2024!}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vgp_db}
+      MYSQL_USER: ${MYSQL_USER:-vgp_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-VgpUser2024!}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+    networks:
+      - vgp-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-VgpRoot2024!}",
+        ]
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vgp-backend
+    restart: always
+    environment:
+      - DTABLE_API_TOKEN=${DTABLE_API_TOKEN}
+      - DTABLE_BASE_UUID=${DTABLE_BASE_UUID}
+      - DTABLE_BASE_URL=${DTABLE_BASE_URL:-https://ditable.yanao.ru}
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_USER=${MYSQL_USER:-vgp_user}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-VgpUser2024!}
+      - DB_NAME=${MYSQL_DATABASE:-vgp_db}
+      - ROOT_PATH=/api
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/logs:/app/logs
+    ports:
+      - "8010:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - vgp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vgp-frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - vgp-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: vgp-nginx
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "87:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - vgp-network
+
+networks:
+  vgp-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
