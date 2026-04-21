@@ -2,22 +2,12 @@ FROM node:18-alpine as builder
 
 WORKDIR /app
 
-# Копируем package.json
 COPY package*.json ./
-
-# Устанавливаем зависимости
 RUN npm install --legacy-peer-deps || npm install || true
-
-# Копируем исходный код
 COPY . .
-
-# Собираем проект
 RUN npm run build || true
-
-# Проверяем что собралось
 RUN ls -la dist/ 2>/dev/null || ls -la build/ 2>/dev/null || mkdir -p dist
 
-# Создаем выходную директорию
 RUN mkdir -p /output && \
     if [ -d "dist" ]; then \
         cp -r dist/* /output/; \
@@ -29,12 +19,29 @@ RUN mkdir -p /output && \
 
 FROM nginx:alpine
 
-# Копируем собранные файлы
 COPY --from=builder /output /usr/share/nginx/html
 
-# Копируем конфиг nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf 2>/dev/null || \
-    echo 'server { listen 80; location / { root /usr/share/nginx/html; try_files $uri /index.html; } }' > /etc/nginx/conf.d/default.conf
+# Конфиг nginx через RUN вместо COPY с fallback
+RUN echo 'server { \n\
+    listen 80; \n\
+    server_name localhost; \n\
+    root /usr/share/nginx/html; \n\
+    \n\
+    location / { \n\
+        try_files $uri $uri/ /index.html; \n\
+        index index.html; \n\
+    } \n\
+    \n\
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ { \n\
+        expires 1y; \n\
+        add_header Cache-Control "public, immutable"; \n\
+    } \n\
+    \n\
+    location /health { \n\
+        return 200 "OK"; \n\
+        add_header Content-Type text/plain; \n\
+    } \n\
+}' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
