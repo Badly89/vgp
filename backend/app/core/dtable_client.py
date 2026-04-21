@@ -4,7 +4,6 @@ import pickle
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from app.core.config import get_settings
-import redis.asyncio as redis
 
 settings = get_settings()
 
