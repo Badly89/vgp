@@ -1889,8 +1889,8 @@ class DataService:
             where_parts.append("is_child = FALSE")
         
         if vid_fond:
-            where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') = %s")
-        params.append(vid_fond)
+            where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")
+            params.append(vid_fond)
         
         where_clause = " AND ".join(where_parts)
         
