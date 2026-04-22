@@ -841,7 +841,7 @@ class DataService:
             
             # ✅ ДОБАВЛЯЕМ ФИЛЬТР ПО ВИДУ ФОНДА
             if vid_fond:
-                where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")
+                where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")  # ✅ Фильтр
                 params.append(vid_fond)
             
             where_clause = " AND ".join(where_parts)

@@ -56,7 +56,7 @@ export const ResidentsTable: React.FC = () => {
   const [gender, setGender] = useState<string>();
   const [category, setCategory] = useState<string>();
   const [isChild, setIsChild] = useState<string>();
-  const [fundType, setFundType] = useState<string>(); // ← ДОБАВИТЬ
+  const [vidFond, setVidFond] = useState<string>(); // ✅ Состояние
 
   // Списки для фильтров
   const [genders, setGenders] = useState<string[]>([]);
@@ -139,6 +139,7 @@ export const ResidentsTable: React.FC = () => {
           gender: gender || undefined,
           category: category || undefined,
           is_child: isChild || undefined,
+          vid_fond: vidFond || undefined, // ✅ Передаем
         });
 
         const residents = response.data || [];
@@ -218,7 +219,7 @@ export const ResidentsTable: React.FC = () => {
           gender: gender || undefined,
           category: category || undefined,
           is_child: isChild || undefined,
-          fund_type: fundType || undefined,
+          vid_fond: vidFond || undefined, // ✅ Передаем
         });
 
         setData(response.data || []);
@@ -237,7 +238,7 @@ export const ResidentsTable: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [page, pageSize, groupBy, gender, category, isChild, fundType]);
+  }, [page, pageSize, groupBy, gender, category, isChild, vidFond]);
 
   const handleSearch = () => {
     setPage(1);
@@ -249,7 +250,7 @@ export const ResidentsTable: React.FC = () => {
     setGender(undefined);
     setCategory(undefined);
     setIsChild(undefined);
-    setFundType(undefined);
+    setVidFond(undefined);
     setPage(1);
     loadData();
   };
@@ -451,8 +452,8 @@ export const ResidentsTable: React.FC = () => {
               </Select>
               <Select
                 placeholder="Вид фонда"
-                value={fundType}
-                onChange={setFundType}
+                value={vidFond}
+                onChange={setVidFond}
                 style={{ width: 160 }}
                 allowClear
               >

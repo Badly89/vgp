@@ -13,10 +13,11 @@ async def get_residents_list(
     gender: Optional[str] = None,
     category: Optional[str] = None,
     is_child: Optional[str] = None,
+    vid_fond: Optional[str] = None,  # ✅ Параметр
     sort_field: Optional[str] = None,
     sort_order: str = Query("ASC", regex="^(ASC|DESC)$"),
     group_by: Optional[str] = None,
-    vid_fond: Optional[str] = None,  # добавить
+    
 ):
     """Получение списка жителей"""
     try:

@@ -200,6 +200,7 @@ export const residentsApi = {
     gender?: string;
     category?: string;
     is_child?: string;
+    vid_fond?: string; // ✅ Параметр
     sort_field?: string;
     sort_order?: "ASC" | "DESC";
   }): Promise<ResidentListResponse> => {
