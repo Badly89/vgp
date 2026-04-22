@@ -457,9 +457,9 @@ export const ResidentsTable: React.FC = () => {
                 style={{ width: 160 }}
                 allowClear
               >
-                <Option value="специализированный">Специализированный</Option>
-                <Option value="маневренный">Маневренный</Option>
-                <Option value="коммерческий">Коммерческий</Option>
+                <Option value="Коммерческий">Коммерческий</Option>
+                <Option value="Специализированный">Специализированный</Option>
+                <Option value="Маневренный">Маневренный</Option>
               </Select>
               <Button
                 type="primary"
