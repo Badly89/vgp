@@ -1891,6 +1891,8 @@ class DataService:
         if vid_fond:
             where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")
             params.append(vid_fond)
+            # Добавить условие, что значение не null
+            where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') != 'null'")
         
         where_clause = " AND ".join(where_parts)
         
