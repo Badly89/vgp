@@ -72,6 +72,7 @@ export const OwnersTable: React.FC = () => {
       let hasMore = true;
       let totalOwnersCount = 0;
 
+      // Загружаем все страницы
       while (hasMore) {
         const response = await ownersApi.getGroupedByAddress({
           page,
@@ -91,11 +92,9 @@ export const OwnersTable: React.FC = () => {
         }
       }
 
-      if (response.data) {
-        setAllData(response.data);
-        setTotalAllOwners(response.total_all_owners || 0); // ← ДОБАВИТЬ
-        applySearch(response.data, searchText);
-      }
+      setAllData(allGroups);
+      setTotalAllOwners(totalOwnersCount);
+      applySearch(allGroups, searchText);
     } catch (error) {
       console.error("Ошибка загрузки собственников:", error);
     } finally {
