@@ -53,7 +53,7 @@ export const OwnersTable: React.FC = () => {
     try {
       const response = await ownersApi.getGroupedByAddress({
         page: 1,
-        page_size: 10000,
+        page_size: 5000,
       });
 
       if (response.data) {
