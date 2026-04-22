@@ -222,11 +222,11 @@ class DataService:
     async def get_all_owners(self) -> List[Dict]:
         """Получить всех собственников (с кэшированием)"""
         if self._owners_cache is None:
-            self._owners_cache = await self._get_cached_or_load(
-                "dtable:all_owners",
-                settings.TABLE_OWNERS
-            )
+            print("🔄 Загрузка всех собственников через SQL...")
+            self._owners_cache = await self._load_owners_with_sql_pagination()
+            print(f"✅ Загружено {len(self._owners_cache)} собственников")
         return self._owners_cache
+
     
     async def get_all_housing(self) -> List[Dict]:
         """Получить все объекты жилого фонда (с кэшированием)"""
