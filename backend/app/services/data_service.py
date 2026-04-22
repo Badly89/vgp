@@ -17,6 +17,23 @@ class DataService:
         self._owners_cache = None
         self._housing_cache = None
         self._organisations_cache = None
+    
+    def _extract_select_value(self, value: Any) -> str:
+        """Извлечение значения из single select DTable"""
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list) and value:
+            item = value[0]
+            if isinstance(item, str):
+                return item
+            if isinstance(item, dict):
+                return item.get("display_value") or item.get("value") or str(item)
+            return str(item)
+        if isinstance(value, dict):
+            return value.get("display_value") or value.get("value") or str(value)
+        return str(value)
         
     @staticmethod
     def extract_house_number(address: str) -> int:
@@ -824,8 +841,8 @@ class DataService:
             
             # ✅ ДОБАВЛЯЕМ ФИЛЬТР ПО ВИДУ ФОНДА
             if vid_fond:
-                where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') = %s")
-                params.append(vid_fond)
+                where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') LIKE %s")
+                params.append(f"%{vid_fond}%")
             
             where_clause = " AND ".join(where_parts)
             
