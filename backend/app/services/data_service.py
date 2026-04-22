@@ -16,6 +16,7 @@ class DataService:
         self._residents_cache = None
         self._owners_cache = None
         self._housing_cache = None
+        self._organisations_cache = None
         
     @staticmethod
     def extract_house_number(address: str) -> int:
