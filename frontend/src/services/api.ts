@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Для Vite используем import.meta.env вместо process.env
 // const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -85,12 +85,12 @@ export const organizationsApi = {
     page_size?: number;
     search?: string;
   }) => {
-    const response = await api.get("/api/organizations/list", { params });
+    const response = await api.get("/organizations/list", { params });
     return response.data;
   },
 
   getDetails: async (id: string) => {
-    const response = await api.get(`/api/organizations/${id}`);
+    const response = await api.get(`/organizations/${id}`);
     return response.data;
   },
 };
@@ -134,17 +134,17 @@ export const housingApi = {
     category?: string;
     building_type?: string; // ← ДОБАВЬТЕ ЭТУ СТРОКУ
   }): Promise<HousingListResponse> => {
-    const response = await api.get("/api/housing/list", { params });
+    const response = await api.get("/housing/list", { params });
     return response.data;
   },
 
   getDetails: async (id: string) => {
-    const response = await api.get(`/api/housing/${id}`);
+    const response = await api.get(`/housing/${id}`);
     return response.data;
   },
 
   getCategories: async (): Promise<string[]> => {
-    const response = await api.get("/api/housing/categories/list");
+    const response = await api.get("/housing/categories/list");
     return response.data.categories;
   },
 };
@@ -158,7 +158,7 @@ export const ownersApi = {
     sort_field?: string;
     sort_order?: "ASC" | "DESC";
   }): Promise<OwnerListResponse> => {
-    const response = await api.get("/api/owners/list", { params });
+    const response = await api.get("/owners/list", { params });
     return response.data;
   },
 
@@ -168,14 +168,14 @@ export const ownersApi = {
     page_size?: number;
     search?: string;
   }): Promise<OwnersGroupedResponse> => {
-    const response = await api.get("/api/owners/grouped-by-address", {
+    const response = await api.get("/owners/grouped-by-address", {
       params,
     });
     return response.data;
   },
 
   getDetails: async (id: string) => {
-    const response = await api.get(`/api/owners/${id}`);
+    const response = await api.get(`/owners/${id}`);
     return response.data;
   },
 };
@@ -203,7 +203,7 @@ export const residentsApi = {
     sort_field?: string;
     sort_order?: "ASC" | "DESC";
   }): Promise<ResidentListResponse> => {
-    const response = await api.get("/api/residents/list", { params });
+    const response = await api.get("/residents/list", { params });
 
     return response.data;
   },
@@ -214,12 +214,12 @@ export const residentsApi = {
     category?: string;
     is_child?: string;
   }): Promise<{ count: number }> => {
-    const response = await api.get("/api/residents/count", { params });
+    const response = await api.get("/residents/count", { params });
     return response.data;
   },
 
   getDetails: async (id: string) => {
-    const response = await api.get(`/api/residents/${id}`);
+    const response = await api.get(`/residents/${id}`);
     return response.data;
   },
 };
@@ -234,32 +234,32 @@ export const dashboardApi = {
     if (table) params.table = table;
     if (aggregation) params.aggregation = aggregation;
 
-    const response = await api.get("/api/dashboard/stats", { params });
+    const response = await api.get("/dashboard/stats", { params });
     return response.data;
   },
 
   // Получение сводной информации
   getSummary: async (): Promise<any> => {
-    const response = await api.get("/api/dashboard/summary");
+    const response = await api.get("/dashboard/summary");
     console.log("API getSummary response:", response.data); // Добавьте лог
     return response.data;
   },
 
   // Получение списка полей таблицы
   getTableFields: async (table: string): Promise<{ fields: string[] }> => {
-    const response = await api.get(`/api/dashboard/fields/${table}`);
+    const response = await api.get(`/dashboard/fields/${table}`);
     return response.data;
   },
 
   // Получение данных для конкретной конфигурации графика
   getChartData: async (config: any): Promise<any> => {
-    const response = await api.post("/api/dashboard/chart-data", config);
+    const response = await api.post("/dashboard/chart-data", config);
     return response.data;
   },
 
   // Получение расширенной статистики
   getAdvancedStats: async (): Promise<any> => {
-    const response = await api.get("/api/dashboard/advanced-stats");
+    const response = await api.get("/dashboard/advanced-stats");
     console.log("API getAdvancedStats response:", response.data); // Добавьте лог
     return response.data;
   },
@@ -269,25 +269,25 @@ export const dashboardApi = {
 export const syncApi = {
   // Запуск полной синхронизации
   syncAll: async (): Promise<{ status: string; message: string }> => {
-    const response = await api.post("/api/sync/all");
+    const response = await api.post("/sync/all");
     return response.data;
   },
 
   // Синхронизация только жителей
   syncResidents: async (): Promise<{ status: string; synced: number }> => {
-    const response = await api.post("/api/sync/residents");
+    const response = await api.post("/sync/residents");
     return response.data;
   },
 
   syncOrganizations: async (): Promise<{ status: string; synced: number }> => {
-    const response = await api.post("/api/sync/organizations");
+    const response = await api.post("/sync/organizations");
     return response.data;
   },
 
   syncTable: async (
     table: string,
   ): Promise<{ status: string; table: string; synced: number }> => {
-    const response = await api.post(`/api/sync/table/${table}`);
+    const response = await api.post(`/sync/table/${table}`);
     return response.data;
   },
 
@@ -300,23 +300,23 @@ export const syncApi = {
       sync_status: string;
     }>;
   }> => {
-    const response = await api.get("/api/sync/status");
+    const response = await api.get("/sync/status");
     return response.data;
   },
 
   // В syncApi добавить:
   getSchedule: async () => {
-    const response = await api.get("/api/sync/schedule");
+    const response = await api.get("/sync/schedule");
     return response.data;
   },
 
   setSchedule: async (data: any) => {
-    const response = await api.post("/api/sync/schedule", data);
+    const response = await api.post("/sync/schedule", data);
     return response.data;
   },
 
   runSyncNow: async () => {
-    const response = await api.post("/api/sync/schedule/run-now");
+    const response = await api.post("/sync/schedule/run-now");
     return response.data;
   },
 };
