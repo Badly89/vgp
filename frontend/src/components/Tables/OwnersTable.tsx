@@ -67,10 +67,29 @@ export const OwnersTable: React.FC = () => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const response = await ownersApi.getGroupedByAddress({
-        page: 1,
-        page_size: 5000,
-      });
+      let allGroups: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      let totalOwnersCount = 0;
+
+      while (hasMore) {
+        const response = await ownersApi.getGroupedByAddress({
+          page,
+          page_size: 1000,
+        });
+
+        if (response.data && response.data.length > 0) {
+          allGroups = [...allGroups, ...response.data];
+          totalOwnersCount = response.total_all_owners || response.total_owners;
+          page++;
+
+          if (response.data.length < 1000) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
 
       if (response.data) {
         setAllData(response.data);
