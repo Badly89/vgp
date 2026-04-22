@@ -237,6 +237,14 @@ class DataService:
             )
         return self._housing_cache
     
+    async def get_all_residents(self) -> List[Dict]:
+        """Получить всех жителей (с кэшированием)"""
+        if self._residents_cache is None:
+            print("🔄 Загрузка всех жителей через SQL...")
+            self._residents_cache = await self._load_all_with_sql_pagination(settings.TABLE_RESIDENTS)
+            print(f"✅ Загружено {len(self._residents_cache)} жителей")
+        return self._residents_cache
+
     async def _get_residents_list_fallback(
         self,
         page: int,
