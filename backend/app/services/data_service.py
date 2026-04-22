@@ -793,7 +793,8 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
-        sort_order: str = "ASC"
+        sort_order: str = "ASC",
+        vid_fond: Optional[str] = None,  # добавить
     ) -> Dict[str, Any]:
         """Получение списка жителей из MariaDB"""
         try:
@@ -820,6 +821,11 @@ class DataService:
                 where_parts.append("is_child = TRUE")
             elif is_child == "no":
                 where_parts.append("is_child = FALSE")
+            
+            # ✅ ДОБАВЛЯЕМ ФИЛЬТР ПО ВИДУ ФОНДА
+            if vid_fond:
+                where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') = %s")
+                params.append(vid_fond)
             
             where_clause = " AND ".join(where_parts)
             
@@ -1837,7 +1843,8 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
-        sort_order: str = "ASC"
+        sort_order: str = "ASC",
+        vid_fond: Optional[str] = None
     ) -> Dict[str, Any]:
         """Получение жителей из MariaDB"""
         offset = (page - 1) * page_size
@@ -1863,6 +1870,10 @@ class DataService:
             where_parts.append("is_child = TRUE")
         elif is_child == "no":
             where_parts.append("is_child = FALSE")
+        
+        if vid_fond:
+            where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') = %s")
+        params.append(vid_fond)
         
         where_clause = " AND ".join(where_parts)
         
