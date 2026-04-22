@@ -1289,7 +1289,7 @@ class DataService:
     async def get_owners_grouped_by_address(
         self,
         page: int = 1,
-        page_size: int = 50,
+        page_size: int = 1000,
         search: Optional[str] = None
     ) -> Dict[str, Any]:
         """Получение собственников, сгруппированных по адресу объекта"""
@@ -1813,8 +1813,6 @@ class DataService:
         rows = result.get("rows", [])
         print(f"⚠️ Загружено только {len(rows)} записей (ограничение API)")
         return rows
-
-
 
 
     # Методы для работы с MariaDB (вместо DTable)
