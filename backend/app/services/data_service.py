@@ -1298,6 +1298,7 @@ class DataService:
             
             # Загружаем всех собственников
             all_owners = await self.get_all_owners()
+            total_all_owners = len(all_owners)  # ← ДОБАВЛЕНО: общее количество всех собственников
             print(f"📊 Всего загружено {len(all_owners)} собственников")
             
             # Функция для безопасного получения адреса
@@ -1385,7 +1386,8 @@ class DataService:
             return {
                 "data": paginated_groups,
                 "total_groups": total_groups,
-                "total_owners": sum(g["owners_count"] for g in groups),
+                "total_owners": sum(g["owners_count"] for g in groups),  # отфильтрованные
+                "total_all_owners": total_all_owners,  # ← ДОБАВЛЕНО: все собственники
                 "page": page,
                 "page_size": page_size,
                 "total_pages": (total_groups + page_size - 1) // page_size if total_groups > 0 else 1

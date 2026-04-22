@@ -30,7 +30,23 @@ import {
 import { ownersApi, OwnerItem } from "../../services/api";
 import { OwnerModal } from "../Modals/OwnerModal";
 
+// В начале файла или в api.ts
+interface OwnersGroupedResponse {
+  data: Array<{
+    address: string;
+    house_number: string;
+    owners_count: number;
+    owners: OwnerItem[];
+  }>;
+  total_groups: number;
+  total_owners: number;
+  total_all_owners: number; // ← ДОБАВИТЬ
+  page: number;
+  page_size: number;
+}
+
 export const OwnersTable: React.FC = () => {
+  const [totalAllOwners, setTotalAllOwners] = useState<number>(0);
   const [allData, setAllData] = useState<OwnerItem[]>([]);
   const [filteredData, setFilteredData] = useState<OwnerItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +74,7 @@ export const OwnersTable: React.FC = () => {
 
       if (response.data) {
         setAllData(response.data);
+        setTotalAllOwners(response.total_all_owners || 0); // ← ДОБАВИТЬ
         applySearch(response.data, searchText);
       }
     } catch (error) {
@@ -171,7 +188,7 @@ export const OwnersTable: React.FC = () => {
                 Объектов: {stats.totalObjects}
               </Tag>
               <Tag icon={<TeamOutlined />} color="green">
-                Собственников: {stats.totalOwners}
+                Собственников: {totalAllOwners || stats.totalOwners}
               </Tag>
             </Space>
           </Space>
