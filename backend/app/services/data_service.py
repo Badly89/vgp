@@ -1860,6 +1860,7 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
+        privilege: Optional[str] = None,
         sort_order: str = "ASC",
         vid_fond: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -1893,7 +1894,11 @@ class DataService:
             params.append(vid_fond)
             # Добавить условие, что значение не null
             where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') != 'null'")
-        
+
+        if privilege:
+            where_parts.append("JSON_CONTAINS(JSON_EXTRACT(data, '$.Льготные категории'), %s)")
+            params.append(f'"{privilege}"')  # Ищем строку в кавычках внутри массива
+                        
         where_clause = " AND ".join(where_parts)
         
         # Сортировка

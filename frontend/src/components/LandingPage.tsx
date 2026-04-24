@@ -23,6 +23,7 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import "../LandingPage.css";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -35,7 +36,7 @@ export const LandingPage: React.FC = () => {
       title: "Жилой фонд",
       description:
         "Список домов, информация об объектах, аварийность, площадь и другие характеристики",
-      icon: <HomeOutlined style={{ fontSize: 48, color: "#3f8600" }} />,
+      icon: <HomeOutlined />,
       color: "#3f8600",
       bgColor: "#f6ffed",
       borderColor: "#b7eb8f",
@@ -47,41 +48,38 @@ export const LandingPage: React.FC = () => {
       title: "Собственники жилья",
       description:
         "Реестр собственников, доли, контактные данные, группировка по адресам",
-      icon: <TeamOutlined style={{ fontSize: 48, color: "#1890ff" }} />,
+      icon: <TeamOutlined />,
       color: "#1890ff",
       bgColor: "#e6f7ff",
       borderColor: "#91caff",
       path: "/owners",
-      stats: { label: "Собственников", value: "1 640" },
     },
     {
       key: "residents",
       title: "Жители районов",
       description:
         "Список жителей, регистрация, состав семей, демографические данные",
-      icon: <UserOutlined style={{ fontSize: 48, color: "#722ed1" }} />,
+      icon: <UserOutlined />,
       color: "#722ed1",
       bgColor: "#f9f0ff",
       borderColor: "#d3adf7",
       path: "/residents",
-      stats: { label: "Жителей", value: "5 002" },
     },
     {
       key: "organizations",
       title: "Организации",
       description: "Список организаций, контакты, ИНН, виды деятельности",
-      icon: <ShopOutlined style={{ fontSize: 48, color: "#fa8c16" }} />,
+      icon: <ShopOutlined />,
       color: "#fa8c16",
       bgColor: "#fff7e6",
       borderColor: "#ffd591",
       path: "/organizations",
-      stats: { label: "Организаций", value: "54" },
     },
     {
       key: "dashboard",
       title: "Дашборд",
       description: "Аналитика, графики, статистика по всем разделам",
-      icon: <DashboardOutlined style={{ fontSize: 48, color: "#eb2f96" }} />,
+      icon: <DashboardOutlined />,
       color: "#eb2f96",
       bgColor: "#fff0f6",
       borderColor: "#ffadd6",
@@ -91,7 +89,7 @@ export const LandingPage: React.FC = () => {
       key: "sync",
       title: "Синхронизация",
       description: "Обновление данных из DTable, настройка расписания",
-      icon: <SyncOutlined style={{ fontSize: 48, color: "#13c2c2" }} />,
+      icon: <SyncOutlined />,
       color: "#13c2c2",
       bgColor: "#e6fffb",
       borderColor: "#87e8de",
@@ -112,18 +110,20 @@ export const LandingPage: React.FC = () => {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              🏢 VGP
+              {" "}
+              <img
+                src="/images/gerb.png"
+                alt="Герб Вынгапур"
+                style={{ width: "120px", height: "auto", marginBottom: "20px" }}
+              />
             </span>
           </Title>
           <Title
             level={2}
             style={{ margin: 0, fontWeight: 400, color: "#666" }}
           >
-            Реестр жилого фонда
+            Реестр жилого фонда микрорайона Вынгапуровский
           </Title>
-          <Text style={{ fontSize: 16, color: "#8c8c8c" }}>
-            Микрорайон Вынгапур
-          </Text>
         </Space>
       </div>
 
@@ -171,6 +171,7 @@ export const LandingPage: React.FC = () => {
           <Col xs={24} sm={12} md={8} lg={8} xl={6} key={section.key}>
             <Card
               hoverable
+              className="section-card"
               style={{
                 height: "100%",
                 borderRadius: 16,
@@ -188,19 +189,22 @@ export const LandingPage: React.FC = () => {
                 size="middle"
                 style={{ width: "100%" }}
               >
-                {/* Иконка */}
+                {/* Анимированная иконка */}
                 <div
+                  className="icon-wrapper"
                   style={{
                     textAlign: "center",
                     padding: "20px",
                     background: section.bgColor,
-                    borderRadius: 50,
+                    borderRadius: "50%",
                     width: 100,
                     height: 100,
                     margin: "0 auto",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    fontSize: 48,
+                    color: section.color,
                   }}
                 >
                   {section.icon}
@@ -230,26 +234,12 @@ export const LandingPage: React.FC = () => {
                   {section.description}
                 </Paragraph>
 
-                {/* Статистика (если есть) */}
-                {section.stats && (
-                  <div style={{ textAlign: "center" }}>
-                    <Statistic
-                      title={section.stats.label}
-                      value={section.stats.value}
-                      valueStyle={{
-                        color: section.color,
-                        fontSize: 28,
-                        fontWeight: 600,
-                      }}
-                    />
-                  </div>
-                )}
-
                 {/* Кнопка */}
                 <Button
                   type="primary"
                   block
                   size="large"
+                  className="action-button"
                   style={{
                     marginTop: 8,
                     background: section.color,
@@ -272,9 +262,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Футер */}
       <div style={{ textAlign: "center", marginTop: 48, color: "#8c8c8c" }}>
-        <Text type="secondary">
-          © 2024 VGP Housing Registry • Данные обновляются автоматически
-        </Text>
+        <Text type="secondary">© 2026 • УИТиС</Text>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
   },
+  publicDir: "public", // явно указываем public директорию
   optimizeDeps: {
     include: ["@simplewebauthn/browser"],
     esbuildOptions: {

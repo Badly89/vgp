@@ -89,7 +89,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </Header>
       <Layout>
-        <Sider width={250} style={{ background: colorBgContainer }}>
+        <Sider
+          width={250}
+          style={{
+            background: colorBgContainer,
+            position: "sticky",
+            top: 0,
+            height: "100vh",
+          }}
+        >
           <Menu
             mode="inline"
             selectedKeys={[location.pathname]}

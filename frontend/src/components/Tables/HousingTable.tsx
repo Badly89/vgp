@@ -26,6 +26,8 @@ import { housingApi, HousingItem } from "../../services/api";
 import { sortByHouseNumber } from "../../utils/naturalSort";
 import { HousingCard } from "./HousingCard";
 import { HousingModal } from "../Modals/HousingModal";
+import { GerbSpinner } from "../GerbSpinner";
+import { ExportButton } from "../ExportButton";
 
 const { Option } = Select;
 
@@ -84,6 +86,8 @@ export const HousingTable: React.FC = () => {
 
   const [selectedHousing, setSelectedHousing] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [exportData, setExportData] = useState<any[]>([]);
 
   // Вспомогательные функции
   const formatValue = (value: any): string => {
@@ -222,6 +226,67 @@ export const HousingTable: React.FC = () => {
     setPage(1);
   };
 
+  const loadAllFilteredForExport = async () => {
+    try {
+      // Если фильтры не заданы — используем все данные
+      if (
+        !searchAddress &&
+        !housingType &&
+        !buildingType &&
+        emergencyFilter === undefined
+      ) {
+        setExportData(allData);
+        return;
+      }
+
+      // Загружаем все данные с фильтрами постранично
+      let allItems: any[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await housingApi.getList({
+          page,
+          page_size: 100,
+          search: searchAddress || undefined,
+          category: housingType || undefined,
+          building_type: buildingType || undefined,
+          is_emergency: emergencyFilter,
+        });
+
+        const rows = response.data || [];
+
+        // Обрабатываем данные так же, как в loadAllData
+        const processedData = rows.map((item: any) => {
+          const processed: any = { ...item };
+          Object.keys(processed).forEach((key) => {
+            const value = processed[key];
+            if (value && (typeof value === "object" || Array.isArray(value))) {
+              processed[key] = formatValue(value);
+            }
+          });
+          return processed;
+        });
+
+        allItems = [...allItems, ...processedData];
+
+        if (rows.length < 100 || allItems.length >= response.total) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+
+      setExportData(allItems);
+      console.log(
+        `Загружено ${allItems.length} отфильтрованных записей для экспорта`,
+      );
+    } catch (error) {
+      console.error("Ошибка загрузки отфильтрованных данных:", error);
+      setExportData(filteredData); // Fallback
+    }
+  };
+
   const displayData = useMemo(() => {
     const sorted = sortByHouseNumber(filteredData, sortOrder);
     const start = (page - 1) * pageSize;
@@ -305,12 +370,18 @@ export const HousingTable: React.FC = () => {
   };
 
   useEffect(() => {
+    if (allData.length > 0) {
+      loadAllFilteredForExport();
+    }
     loadAllData();
     loadFilterOptions();
   }, []);
 
   useEffect(() => {
-    if (allData.length > 0) applyFilters(allData);
+    if (allData.length > 0) {
+      applyFilters(allData);
+      loadAllFilteredForExport();
+    }
   }, [searchAddress, housingType, buildingType, emergencyFilter]);
 
   const handleReset = () => {
@@ -405,29 +476,55 @@ export const HousingTable: React.FC = () => {
               <Button icon={<ReloadOutlined />} onClick={handleReset}>
                 Сбросить
               </Button>
-            </Space>
-            <Space>
-              <Tag color="blue">Всего: {filteredData.length}</Tag>
+              <ExportButton
+                data={filteredData.length > 0 ? filteredData : allData}
+                title={
+                  searchAddress ||
+                  housingType ||
+                  buildingType ||
+                  emergencyFilter !== undefined
+                    ? "Жилой фонд (отфильтровано)"
+                    : "Жилой фонд"
+                }
+                filename={
+                  searchAddress
+                    ? `housing_${searchAddress.substring(0, 20)}`
+                    : housingType
+                      ? `housing_${housingType}`
+                      : buildingType
+                        ? `housing_${buildingType}`
+                        : "housing_all"
+                }
+                columns={[
+                  { key: "Почтовый адрес", label: "Адрес" },
+                  { key: "Номер дома", label: "№ дома" },
+                  { key: "Вид жилья", label: "Вид жилья" },
+                  { key: "Тип здания", label: "Тип здания" },
+                  { key: "Количество этажей", label: "Этажность" },
+                  { key: "Площадь общая", label: "Площадь общая" },
+                ]}
+                disabled={loading}
+                size="small"
+              />
+              <Row gutter={16}>
+                <Col>
+                  <Tag icon={<HomeOutlined />} color="blue">
+                    Всего: {emergencyStats.total}
+                  </Tag>
+                </Col>
+                <Col>
+                  <Tag icon={<WarningOutlined />} color="red">
+                    Аварийных: {emergencyStats.emergency}
+                  </Tag>
+                </Col>
+                <Col>
+                  <Tag icon={<CheckCircleOutlined />} color="green">
+                    Не аварийных: {emergencyStats.notEmergency}
+                  </Tag>
+                </Col>
+              </Row>
             </Space>
           </Space>
-
-          <Row gutter={16}>
-            <Col>
-              <Tag icon={<HomeOutlined />} color="blue">
-                Всего: {emergencyStats.total}
-              </Tag>
-            </Col>
-            <Col>
-              <Tag icon={<WarningOutlined />} color="red">
-                Аварийных: {emergencyStats.emergency}
-              </Tag>
-            </Col>
-            <Col>
-              <Tag icon={<CheckCircleOutlined />} color="green">
-                Не аварийных: {emergencyStats.notEmergency}
-              </Tag>
-            </Col>
-          </Row>
 
           <Radio.Group
             value={groupBy}
@@ -480,7 +577,10 @@ export const HousingTable: React.FC = () => {
         </Space>
       </Card>
 
-      <Spin spinning={loading}>
+      <Spin
+        indicator={<GerbSpinner size={200} animation="spin3d" />}
+        spinning={loading}
+      >
         {displayData.length > 0 ? (
           <>
             {groupBy !== "none" ? (

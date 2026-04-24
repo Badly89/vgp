@@ -29,6 +29,8 @@ import {
 } from "@ant-design/icons";
 import { ownersApi, OwnerItem } from "../../services/api";
 import { OwnerModal } from "../Modals/OwnerModal";
+import { GerbSpinner } from "../GerbSpinner";
+import { ExportButton } from "../ExportButton";
 
 // В начале файла или в api.ts
 interface OwnersGroupedResponse {
@@ -57,6 +59,8 @@ export const OwnersTable: React.FC = () => {
 
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [exportData, setExportData] = useState<any[]>([]);
 
   const showOwnerDetails = (ownerId: string) => {
     setSelectedOwnerId(ownerId);
@@ -132,6 +136,9 @@ export const OwnersTable: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (allData.length > 0) {
+      loadAllFilteredForExport();
+    }
     applySearch(allData, searchText);
   }, [searchText, allData]);
 
@@ -167,6 +174,86 @@ export const OwnersTable: React.FC = () => {
     return owner[field] || "—";
   };
 
+  const loadAllFilteredForExport = async () => {
+    try {
+      // Если фильтры не заданы — копируем текущие данные
+      if (!searchText) {
+        // Собираем всех собственников из всех групп
+        const allOwners: any[] = [];
+        allData.forEach((group: any) => {
+          if (group.owners) {
+            group.owners.forEach((owner: any) => {
+              allOwners.push({
+                ...owner,
+                address: group.address,
+                house_number: group.house_number,
+              });
+            });
+          }
+        });
+        setExportData(allOwners);
+        return;
+      }
+
+      // С фильтрами загружаем постранично
+      let allItems: any[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await ownersApi.getGroupedByAddress({
+          page,
+          page_size: 100,
+          search: searchText || undefined,
+        });
+
+        const groups = response.data || [];
+
+        // Извлекаем собственников из групп
+        groups.forEach((group: any) => {
+          if (group.owners) {
+            group.owners.forEach((owner: any) => {
+              allItems.push({
+                ...owner,
+                address: group.address,
+                house_number: group.house_number,
+                owners_count: group.owners_count,
+              });
+            });
+          }
+        });
+
+        if (groups.length < 100) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+
+      setExportData(allItems);
+      console.log(
+        `Загружено ${allItems.length} отфильтрованных собственников для экспорта`,
+      );
+    } catch (error) {
+      console.error("Ошибка загрузки отфильтрованных данных:", error);
+
+      // Fallback — собираем из текущих данных
+      const allOwners: any[] = [];
+      allData.forEach((group: any) => {
+        if (group.owners) {
+          group.owners.forEach((owner: any) => {
+            allOwners.push({
+              ...owner,
+              address: group.address,
+              house_number: group.house_number,
+            });
+          });
+        }
+      });
+      setExportData(allOwners);
+    }
+  };
+
   return (
     <>
       <Card style={{ marginBottom: 24 }}>
@@ -200,6 +287,32 @@ export const OwnersTable: React.FC = () => {
                   : "Развернуть все"}
                 <DownOutlined style={{ marginLeft: 8 }} />
               </Button>
+              <ExportButton
+                data={exportData.length > 0 ? exportData : []}
+                title={
+                  searchText ? "Собственники (отфильтровано)" : "Собственники"
+                }
+                filename={
+                  searchText
+                    ? `owners_${searchText.substring(0, 20).replace(/\s+/g, "_")}`
+                    : "owners_all"
+                }
+                columns={[
+                  { key: "ФИО", label: "ФИО" },
+                  { key: "Наименование", label: "Наименование" },
+                  { key: "address", label: "Адрес объекта" },
+                  { key: "house_number", label: "№ дома" },
+                  { key: "Вид собственности", label: "Вид собственности" },
+                  { key: "Доля", label: "Доля" },
+                  { key: "Телефон", label: "Телефон" },
+                  { key: "Email", label: "Email" },
+                  { key: "ИНН", label: "ИНН" },
+                  { key: "Общая S (м2)", label: "Площадь (м²)" },
+                  { key: "№ квартиры", label: "Квартира" },
+                ]}
+                disabled={loading}
+                size="small"
+              />
             </Space>
             <Space>
               <Tag icon={<HomeOutlined />} color="blue">
@@ -208,6 +321,10 @@ export const OwnersTable: React.FC = () => {
               <Tag icon={<TeamOutlined />} color="green">
                 Собственников: {totalAllOwners || stats.totalOwners}
               </Tag>
+              {exportData.length > 0 &&
+                exportData.length !== (totalAllOwners || stats.totalOwners) && (
+                  <Tag color="orange">Найдено: {exportData.length}</Tag>
+                )}
             </Space>
           </Space>
 
@@ -222,7 +339,10 @@ export const OwnersTable: React.FC = () => {
         </Space>
       </Card>
 
-      <Spin spinning={loading}>
+      <Spin
+        indicator={<GerbSpinner size={100} animation="pulse" />}
+        spinning={loading}
+      >
         {paginatedGroups.length > 0 ? (
           <>
             <Collapse

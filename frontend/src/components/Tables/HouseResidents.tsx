@@ -445,7 +445,7 @@ export const HouseResidents: React.FC = () => {
                                   {fullName}
                                 </div>
                                 <Space size={4} wrap>
-                                  {age && <Tag color="blue">{age} лет</Tag>}
+                                  {/* {age && <Tag color="blue">{age} лет</Tag>} */}
                                   {genderValue && (
                                     <Tag
                                       color={
@@ -475,14 +475,14 @@ export const HouseResidents: React.FC = () => {
                               size={4}
                               style={{ width: "100%" }}
                             >
-                              {birthDate && (
+                              {/* {birthDate && (
                                 <div style={{ fontSize: 13, color: "#595959" }}>
                                   <CalendarOutlined
                                     style={{ marginRight: 8 }}
                                   />
                                   {formatDate(birthDate)}
                                 </div>
-                              )}
+                              )} */}
                               {phone && (
                                 <div style={{ fontSize: 13, color: "#595959" }}>
                                   <PhoneOutlined style={{ marginRight: 8 }} />
