@@ -32,6 +32,7 @@ import {
 } from "@ant-design/icons";
 import { OrganizationModal } from "../Modals/OrganizationModal";
 import { organizationsApi, OrganizationItem } from "../../services/api";
+import { GerbSpinner } from "../GerbSpinner";
 
 export const OrganizationsTable: React.FC = () => {
   const [allData, setAllData] = useState<OrganizationItem[]>([]);
@@ -260,7 +261,16 @@ export const OrganizationsTable: React.FC = () => {
   return (
     <>
       {/* Панель поиска и фильтров */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card
+        style={{
+          marginBottom: 24,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          backgroundColor: "#fff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <Space
             wrap
@@ -327,7 +337,10 @@ export const OrganizationsTable: React.FC = () => {
       </Card>
 
       {/* Карточки организаций */}
-      <Spin spinning={loading}>
+      <Spin
+        indicator={<GerbSpinner size={100} animation="spin3d" />}
+        spinning={loading}
+      >
         {data.length > 0 ? (
           <>
             <Row gutter={[16, 16]}>

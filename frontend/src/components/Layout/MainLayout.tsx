@@ -85,7 +85,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             fontWeight: "bold",
           }}
         >
-          🏢 Реестр жилого фонда Вынгапур
+          🏢 Реестр жилого фонда мкрн. Вынгапуровский
         </div>
       </Header>
       <Layout>

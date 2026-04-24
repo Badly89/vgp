@@ -405,7 +405,16 @@ export const HousingTable: React.FC = () => {
 
   return (
     <>
-      <Card style={{ marginBottom: 24 }}>
+      <Card
+        style={{
+          marginBottom: 24,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          backgroundColor: "#fff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <Space
             wrap

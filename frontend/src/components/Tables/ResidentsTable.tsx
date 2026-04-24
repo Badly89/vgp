@@ -425,8 +425,13 @@ export const ResidentsTable: React.FC = () => {
             setSelectedResident(item);
             setModalVisible(true);
           }}
-          style={{ height: "100%", cursor: "pointer" }}
-          bodyStyle={{ padding: "16px" }}
+          style={{
+            height: "100%",
+            cursor: "pointer",
+          }}
+          styles={{
+            body: { padding: "16px", border: "4px", borderBlock: "2px" },
+          }}
         >
           <div
             style={{
@@ -520,8 +525,17 @@ export const ResidentsTable: React.FC = () => {
 
   return (
     <>
-      <Card style={{ marginBottom: 24 }}>
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Card
+        style={{
+          marginBottom: 24,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          backgroundColor: "#fff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Space direction="horizontal" size="middle" style={{ width: "100%" }}>
           <Space
             wrap
             style={{ width: "100%", justifyContent: "space-between" }}
@@ -642,54 +656,42 @@ export const ResidentsTable: React.FC = () => {
                 size="small"
               />
             </Space>
-
-            <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
-              👥 {groupBy === "house" ? "Всего домов" : "Всего жителей"}:{" "}
-              {total}
-            </Tag>
           </Space>
 
-          <Space>
-            <span style={{ color: "#8c8c8c" }}>Группировать:</span>
-            <Radio.Group
-              value={groupBy}
-              onChange={(e) => {
-                setGroupBy(e.target.value);
-                setPage(1);
-                setSearchParams({ group: e.target.value });
-              }}
-              buttonStyle="solid"
-              size="small"
-            >
-              <Radio.Button value="none">Без группировки</Radio.Button>
-              <Radio.Button value="house">По домам</Radio.Button>
-            </Radio.Group>
+          <Space wrap style={{ width: "100%" }}>
+            <Space>
+              <span style={{ color: "#8c8c8c" }}>Группировать:</span>
+              <Radio.Group
+                value={groupBy}
+                onChange={(e) => {
+                  setGroupBy(e.target.value);
+                  setPage(1);
+                  setSearchParams({ group: e.target.value });
+                }}
+                buttonStyle="solid"
+                size="small"
+              >
+                <Radio.Button value="none">Без группировки</Radio.Button>
+                <Radio.Button value="house">По домам</Radio.Button>
+              </Radio.Group>
+            </Space>
+            <Space style={{ alignItems: "end" }}>
+              <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
+                👥 {groupBy === "house" ? "Всего домов" : "Всего жителей"}:{" "}
+                {total}
+              </Tag>
+            </Space>
           </Space>
         </Space>
       </Card>
 
       <Spin
-        indicator={<GerbSpinner size={300} animation="pulse" />}
+        indicator={<GerbSpinner size={50} animation="spin3d" />}
         spinning={loading}
       >
         {groupBy === "house" ? (
           allData.length > 0 ? (
             <>
-              <ExportButton
-                data={allData}
-                title={privilege ? `Дома (${privilege})` : "Дома"}
-                filename={privilege ? `houses_${privilege}` : "houses_all"}
-                columns={[
-                  { key: "address", label: "Адрес" },
-                  { key: "house_number", label: "№ дома" },
-                  { key: "total_residents", label: "Жителей" },
-                  { key: "adults_count", label: "Взрослых" },
-                  { key: "children_count", label: "Детей" },
-                  { key: "apartments", label: "Квартир" },
-                ]}
-                disabled={loading}
-                size="small"
-              />
               <List
                 dataSource={allData.slice(
                   (page - 1) * pageSize,
