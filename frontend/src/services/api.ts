@@ -167,6 +167,7 @@ export const ownersApi = {
     page?: number;
     page_size?: number;
     search?: string;
+    address?: string; // ← ДОБАВИТЬ
   }): Promise<OwnersGroupedResponse> => {
     const response = await api.get("/owners/grouped-by-address", {
       params,

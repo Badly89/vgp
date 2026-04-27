@@ -9,15 +9,17 @@ router = APIRouter(prefix="/api/owners", tags=["owners"])
 @router.get("/grouped-by-address")
 async def get_owners_grouped_by_address(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=5000),  # Уменьшаем лимит до 5000
-    search: Optional[str] = None
+    page_size: int = Query(50, ge=1, le=5000),
+    search: Optional[str] = None,
+    address: Optional[str] = None,  # ← ДОБАВИТЬ
 ):
     """Получение собственников, сгруппированных по адресу"""
     try:
         result = await data_service.get_owners_grouped_by_address(
             page=page,
             page_size=page_size,
-            search=search
+            search=search,
+            address=address,  # ← ДОБАВИТЬ
         )
         return result
     except Exception as e:
@@ -72,3 +74,5 @@ async def get_owner_details(owner_id: str):
     except Exception as e:
         print(f"❌ Ошибка в get_owner_details: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+

@@ -14,6 +14,9 @@ import {
   Empty,
   Collapse,
   Radio,
+  Table,
+  Drawer,
+  Tooltip,
 } from "antd";
 import {
   SearchOutlined,
@@ -21,11 +24,13 @@ import {
   HomeOutlined,
   WarningOutlined,
   CheckCircleOutlined,
+  EnvironmentOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { housingApi, HousingItem } from "../../services/api";
 import { sortByHouseNumber } from "../../utils/naturalSort";
 import { HousingCard } from "./HousingCard";
-import { HousingModal } from "../Modals/HousingModal";
+import { HousingDrawer } from "../Drawers/HousingDrawer";
 import { GerbSpinner } from "../GerbSpinner";
 import { ExportButton } from "../ExportButton";
 
@@ -74,7 +79,7 @@ export const HousingTable: React.FC = () => {
   const [searchAddress, setSearchAddress] = useState("");
   const [housingType, setHousingType] = useState<string>();
   const [buildingType, setBuildingType] = useState<string>();
-  const [emergencyFilter, setEmergencyFilter] = useState<boolean>(); // true = аварийный, false = не аварийный
+  const [emergencyFilter, setEmergencyFilter] = useState<boolean>();
 
   const [housingTypes, setHousingTypes] = useState<string[]>([]);
   const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
@@ -84,8 +89,12 @@ export const HousingTable: React.FC = () => {
     "none" | "housingType" | "buildingType"
   >("none");
 
-  const [selectedHousing, setSelectedHousing] = useState<any>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  // Drawer вместо Modal
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedHousingId, setSelectedHousingId] = useState<string | null>(
+    null,
+  );
+  const [filterVisible, setFilterVisible] = useState(false); // ← Панель фильтров
 
   const [exportData, setExportData] = useState<any[]>([]);
 
@@ -228,7 +237,6 @@ export const HousingTable: React.FC = () => {
 
   const loadAllFilteredForExport = async () => {
     try {
-      // Если фильтры не заданы — используем все данные
       if (
         !searchAddress &&
         !housingType &&
@@ -239,7 +247,6 @@ export const HousingTable: React.FC = () => {
         return;
       }
 
-      // Загружаем все данные с фильтрами постранично
       let allItems: any[] = [];
       let page = 1;
       let hasMore = true;
@@ -255,8 +262,6 @@ export const HousingTable: React.FC = () => {
         });
 
         const rows = response.data || [];
-
-        // Обрабатываем данные так же, как в loadAllData
         const processedData = rows.map((item: any) => {
           const processed: any = { ...item };
           Object.keys(processed).forEach((key) => {
@@ -269,7 +274,6 @@ export const HousingTable: React.FC = () => {
         });
 
         allItems = [...allItems, ...processedData];
-
         if (rows.length < 100 || allItems.length >= response.total) {
           hasMore = false;
         } else {
@@ -278,12 +282,8 @@ export const HousingTable: React.FC = () => {
       }
 
       setExportData(allItems);
-      console.log(
-        `Загружено ${allItems.length} отфильтрованных записей для экспорта`,
-      );
     } catch (error) {
-      console.error("Ошибка загрузки отфильтрованных данных:", error);
-      setExportData(filteredData); // Fallback
+      setExportData(filteredData);
     }
   };
 
@@ -370,9 +370,6 @@ export const HousingTable: React.FC = () => {
   };
 
   useEffect(() => {
-    if (allData.length > 0) {
-      loadAllFilteredForExport();
-    }
     loadAllData();
     loadFilterOptions();
   }, []);
@@ -393,21 +390,149 @@ export const HousingTable: React.FC = () => {
     setGroupBy("none");
   };
 
-  const showDetails = async (id: string) => {
-    try {
-      const details = await housingApi.getDetails(id);
-      setSelectedHousing(details);
-      setModalVisible(true);
-    } catch (error) {
-      console.error("Ошибка загрузки деталей:", error);
-    }
+  // Новая функция для открытия Drawer
+  const showDetails = (id: string) => {
+    setSelectedHousingId(id);
+    setDrawerVisible(true);
   };
 
+  // Колонки таблицы
+  const columns = [
+    {
+      title: "Адрес",
+      key: "address",
+      width: 280,
+      sorter: (a: any, b: any) => {
+        const numA = parseInt(getHouseNumber(a)) || 0;
+        const numB = parseInt(getHouseNumber(b)) || 0;
+        return numA - numB;
+      },
+      render: (_: any, record: any) => (
+        <a
+          onClick={(e) => {
+            e.stopPropagation();
+            showDetails(record._id);
+          }}
+          style={{ fontWeight: 500 }}
+        >
+          <EnvironmentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+          {getAddress(record)}, д. {getHouseNumber(record)}
+        </a>
+      ),
+    },
+    {
+      title: "Тип дома",
+      key: "building_type",
+      width: 120,
+      render: (_: any, record: any) =>
+        record["Тип здания"] || record["Тип объекта"] || "—",
+    },
+    {
+      title: "Год постройки",
+      key: "year",
+      width: 100,
+      render: (_: any, record: any) =>
+        record["Год ввода"] || record["Год постройки"] || "—",
+    },
+    {
+      title: "Этажность",
+      key: "floors",
+      width: 80,
+      render: (_: any, record: any) => {
+        const floors = record["Количество этажей"] || record["Этажность"];
+        return floors ? `${floors} эт.` : "—";
+      },
+    },
+    {
+      title: "Квартиры",
+      key: "apartments",
+      width: 80,
+      render: (_: any, record: any) => record["квартир всего"] || "—",
+    },
+    {
+      title: "Общая площадь",
+      key: "area",
+      width: 120,
+      render: (_: any, record: any) => {
+        const area = record["Площадь общая"] || record["Площадь"];
+        return area ? `${Number(area).toLocaleString()} м²` : "—";
+      },
+    },
+    {
+      title: "Категория",
+      key: "category",
+      width: 100,
+      render: (_: any, record: any) => {
+        const cat = record["Вид жилья"] || record["Категория"];
+        return cat ? <Tag>{cat}</Tag> : "—";
+      },
+    },
+    {
+      title: "Жителей",
+      key: "residents",
+      width: 80,
+      render: (_: any, record: any) => getResidentsCount(record) || "—",
+    },
+    {
+      title: "Собственников",
+      key: "owners",
+      width: 100,
+      render: (_: any, record: any) => getOwnersCount(record) || "—",
+    },
+    {
+      title: "Тех. состояние",
+      key: "status",
+      width: 180,
+      render: (_: any, record: any) => {
+        const emergency = isEmergency(record);
+        const year = parseInt(
+          record["Год ввода"] || record["Год постройки"] || "0",
+        );
+        let color = "#52c41a";
+        let text = "хорошее";
+
+        if (emergency) {
+          color = "#ff4d4f";
+          text = "аварийное";
+        } else if (year >= 2010) {
+          color = "#52c41a";
+          text = "хорошее";
+        } else if (year >= 1980) {
+          color = "#1890ff";
+          text = "удовлетворительное";
+        } else if (year >= 1960) {
+          color = "#faad14";
+          text = "требует ремонта";
+        } else if (year > 0) {
+          color = "#ff7a45";
+          text = "ветхое";
+        }
+
+        return (
+          <Space>
+            <span
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: color,
+              }}
+            />
+            <span>{text}</span>
+          </Space>
+        );
+      },
+    },
+  ];
+
   return (
-    <>
+    <div style={{ padding: "0 24px" }}>
+      {/* Верхняя панель с кнопками */}
       <Card
+        size="small"
         style={{
-          marginBottom: 24,
+          marginBottom: 16,
           position: "sticky",
           top: 0,
           zIndex: 100,
@@ -415,176 +540,204 @@ export const HousingTable: React.FC = () => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         }}
       >
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <Space
-            wrap
-            style={{ width: "100%", justifyContent: "space-between" }}
-          >
-            <Space wrap>
-              <Input
-                placeholder="Поиск по адресу"
-                value={searchAddress}
-                onChange={(e) => setSearchAddress(e.target.value)}
-                prefix={<SearchOutlined />}
-                style={{ width: 280 }}
-                allowClear
-              />
-              <Select
-                placeholder="Вид жилья"
-                value={housingType}
-                onChange={setHousingType}
-                style={{ width: 180 }}
-                allowClear
-              >
-                {housingTypes.map((type) => (
-                  <Option key={type} value={type}>
-                    {type}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Тип здания"
-                value={buildingType}
-                onChange={setBuildingType}
-                style={{ width: 180 }}
-                allowClear
-              >
-                {buildingTypes.map((type) => (
-                  <Option key={type} value={type}>
-                    {type}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Аварийность"
-                value={emergencyFilter}
-                onChange={setEmergencyFilter}
-                style={{ width: 160 }}
-                allowClear
-              >
-                <Option value={true}>
-                  <Space>
-                    <WarningOutlined style={{ color: "#ff4d4f" }} />
-                    Аварийный
-                  </Space>
-                </Option>
-                <Option value={false}>
-                  <Space>
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    Не аварийный
-                  </Space>
-                </Option>
-              </Select>
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space>
+            <Tag icon={<HomeOutlined />} color="blue">
+              Всего: {emergencyStats.total}
+            </Tag>
+            <Tag icon={<WarningOutlined />} color="red">
+              Аварийных: {emergencyStats.emergency}
+            </Tag>
+            <Tag icon={<CheckCircleOutlined />} color="green">
+              Не аварийных: {emergencyStats.notEmergency}
+            </Tag>
+            {filteredData.length !== allData.length && (
+              <Tag color="orange">Отфильтровано: {filteredData.length}</Tag>
+            )}
+          </Space>
+
+          <Space>
+            <Tooltip title="Фильтры">
               <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={() => applyFilters(allData)}
-              >
-                Поиск
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                Сбросить
-              </Button>
-              <ExportButton
-                data={filteredData.length > 0 ? filteredData : allData}
-                title={
+                icon={<FilterOutlined />}
+                type={
                   searchAddress ||
                   housingType ||
                   buildingType ||
                   emergencyFilter !== undefined
-                    ? "Жилой фонд (отфильтровано)"
-                    : "Жилой фонд"
+                    ? "primary"
+                    : "default"
                 }
-                filename={
-                  searchAddress
-                    ? `housing_${searchAddress.substring(0, 20)}`
-                    : housingType
-                      ? `housing_${housingType}`
-                      : buildingType
-                        ? `housing_${buildingType}`
-                        : "housing_all"
-                }
-                columns={[
-                  { key: "Почтовый адрес", label: "Адрес" },
-                  { key: "Номер дома", label: "№ дома" },
-                  { key: "Вид жилья", label: "Вид жилья" },
-                  { key: "Тип здания", label: "Тип здания" },
-                  { key: "Количество этажей", label: "Этажность" },
-                  { key: "Площадь общая", label: "Площадь общая" },
-                ]}
-                disabled={loading}
-                size="small"
+                onClick={() => setFilterVisible(true)}
               />
-              <Row gutter={16}>
-                <Col>
-                  <Tag icon={<HomeOutlined />} color="blue">
-                    Всего: {emergencyStats.total}
-                  </Tag>
-                </Col>
-                <Col>
-                  <Tag icon={<WarningOutlined />} color="red">
-                    Аварийных: {emergencyStats.emergency}
-                  </Tag>
-                </Col>
-                <Col>
-                  <Tag icon={<CheckCircleOutlined />} color="green">
-                    Не аварийных: {emergencyStats.notEmergency}
-                  </Tag>
-                </Col>
-              </Row>
-            </Space>
+            </Tooltip>
+            <Radio.Group
+              value={groupBy}
+              onChange={(e) => {
+                setGroupBy(e.target.value);
+                setPage(1);
+              }}
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="none">Без группировки</Radio.Button>
+              <Radio.Button value="housingType">По виду жилья</Radio.Button>
+              <Radio.Button value="buildingType">По типу здания</Radio.Button>
+            </Radio.Group>
+            <ExportButton
+              data={exportData.length > 0 ? exportData : filteredData}
+              title="Жилой фонд"
+              filename="housing_export"
+              columns={[
+                { key: "Почтовый адрес", label: "Адрес" },
+                { key: "Номер дома", label: "№ дома" },
+                { key: "Вид жилья", label: "Вид жилья" },
+                { key: "Тип здания", label: "Тип здания" },
+                { key: "Количество этажей", label: "Этажность" },
+                { key: "Площадь общая", label: "Площадь общая" },
+              ]}
+              disabled={loading}
+            />
           </Space>
-
-          <Radio.Group
-            value={groupBy}
-            onChange={(e) => {
-              setGroupBy(e.target.value);
-              setPage(1);
-            }}
-            buttonStyle="solid"
-            size="small"
-          >
-            <Radio.Button value="none">Без группировки</Radio.Button>
-            <Radio.Button value="housingType">По виду жилья</Radio.Button>
-            <Radio.Button value="buildingType">По типу здания</Radio.Button>
-          </Radio.Group>
-
-          {(housingType || buildingType || emergencyFilter !== undefined) && (
-            <Space wrap>
-              <span style={{ color: "#8c8c8c", fontSize: 13 }}>
-                Активные фильтры:
-              </span>
-              {housingType && (
-                <Tag
-                  closable
-                  onClose={() => setHousingType(undefined)}
-                  color="blue"
-                >
-                  🏠 {housingType}
-                </Tag>
-              )}
-              {buildingType && (
-                <Tag
-                  closable
-                  onClose={() => setBuildingType(undefined)}
-                  color="purple"
-                >
-                  🏢 {buildingType}
-                </Tag>
-              )}
-              {emergencyFilter !== undefined && (
-                <Tag
-                  closable
-                  onClose={() => setEmergencyFilter(undefined)}
-                  color={emergencyFilter ? "red" : "green"}
-                >
-                  {emergencyFilter ? "⚠️ Аварийный" : "✅ Не аварийный"}
-                </Tag>
-              )}
-            </Space>
-          )}
         </Space>
+
+        {/* Активные фильтры */}
+        {(housingType ||
+          buildingType ||
+          emergencyFilter !== undefined ||
+          searchAddress) && (
+          <Space wrap style={{ marginTop: 8 }}>
+            <span style={{ color: "#8c8c8c", fontSize: 13 }}>
+              Активные фильтры:
+            </span>
+            {searchAddress && (
+              <Tag
+                closable
+                onClose={() => {
+                  setSearchAddress("");
+                  applyFilters(allData);
+                }}
+                color="blue"
+              >
+                🔍 {searchAddress}
+              </Tag>
+            )}
+            {housingType && (
+              <Tag
+                closable
+                onClose={() => setHousingType(undefined)}
+                color="blue"
+              >
+                🏠 {housingType}
+              </Tag>
+            )}
+            {buildingType && (
+              <Tag
+                closable
+                onClose={() => setBuildingType(undefined)}
+                color="purple"
+              >
+                🏢 {buildingType}
+              </Tag>
+            )}
+            {emergencyFilter !== undefined && (
+              <Tag
+                closable
+                onClose={() => setEmergencyFilter(undefined)}
+                color={emergencyFilter ? "red" : "green"}
+              >
+                {emergencyFilter ? "⚠️ Аварийный" : "✅ Не аварийный"}
+              </Tag>
+            )}
+          </Space>
+        )}
       </Card>
+
+      {/* Выдвижная панель фильтров */}
+      <Drawer
+        title="🔍 Фильтры жилого фонда"
+        placement="right"
+        width={400}
+        open={filterVisible}
+        onClose={() => setFilterVisible(false)}
+      >
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Input
+            placeholder="Поиск по адресу"
+            value={searchAddress}
+            onChange={(e) => setSearchAddress(e.target.value)}
+            prefix={<SearchOutlined />}
+            size="large"
+            allowClear
+          />
+
+          <Select
+            placeholder="Вид жилья"
+            value={housingType}
+            onChange={setHousingType}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            {housingTypes.map((type) => (
+              <Option key={type} value={type}>
+                {type}
+              </Option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="Тип здания"
+            value={buildingType}
+            onChange={setBuildingType}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            {buildingTypes.map((type) => (
+              <Option key={type} value={type}>
+                {type}
+              </Option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="Аварийность"
+            value={emergencyFilter}
+            onChange={setEmergencyFilter}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            <Option value={true}>⚠️ Аварийный</Option>
+            <Option value={false}>✅ Не аварийный</Option>
+          </Select>
+
+          <Space style={{ width: "100%" }}>
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={() => {
+                applyFilters(allData);
+                setFilterVisible(false);
+              }}
+              block
+            >
+              Применить фильтры
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                handleReset();
+                setFilterVisible(false);
+              }}
+              block
+            >
+              Сбросить
+            </Button>
+          </Space>
+        </Space>
+      </Drawer>
 
       <Spin
         indicator={<GerbSpinner size={200} animation="spin3d" />}
@@ -596,7 +749,7 @@ export const HousingTable: React.FC = () => {
               <Collapse
                 defaultActiveKey={Object.keys(
                   displayData.reduce(
-                    (acc, item) => {
+                    (acc: any, item: any) => {
                       if (!item.isGroupHeader) {
                         const key =
                           groupBy === "housingType"
@@ -617,7 +770,7 @@ export const HousingTable: React.FC = () => {
               >
                 {(() => {
                   const groups: Record<string, HousingItem[]> = {};
-                  displayData.forEach((item) => {
+                  displayData.forEach((item: any) => {
                     if (!item.isGroupHeader) {
                       const key =
                         groupBy === "housingType"
@@ -667,35 +820,48 @@ export const HousingTable: React.FC = () => {
                 })()}
               </Collapse>
             ) : (
-              <Row gutter={[16, 16]}>
-                {displayData.map((item) => (
-                  <HousingCard
-                    key={item._id}
-                    item={item}
-                    onShowDetails={showDetails}
-                    getAddress={getAddress}
-                    getHouseNumber={getHouseNumber}
-                    getResidentsCount={getResidentsCount}
-                    getOwnersCount={getOwnersCount}
-                    formatDate={formatDate}
-                  />
-                ))}
-              </Row>
+              <Card
+                styles={{ body: { padding: 0 } }}
+                style={{ borderRadius: 12, overflow: "hidden" }}
+              >
+                <Table
+                  columns={columns}
+                  dataSource={displayData}
+                  rowKey="_id"
+                  pagination={{
+                    current: page,
+                    pageSize,
+                    total: filteredData.length,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (t) => `Всего ${t} объектов`,
+                    pageSizeOptions: ["12", "24", "48", "96"],
+                    onChange: (p, ps) => {
+                      setPage(p);
+                      setPageSize(ps || 24);
+                    },
+                  }}
+                  size="middle"
+                  rowClassName={(_, index) =>
+                    index % 2 === 0 ? "row-light" : "row-dark"
+                  }
+                  onRow={(record) => ({
+                    style: { cursor: "pointer" },
+                    onClick: () => showDetails(record._id),
+                  })}
+                />
+              </Card>
             )}
-            <div style={{ marginTop: 24, textAlign: "center" }}>
-              <Pagination
-                current={page}
-                pageSize={pageSize}
-                total={filteredData.length}
-                showSizeChanger
-                showQuickJumper
-                showTotal={(t) => `Всего ${t} объектов`}
-                pageSizeOptions={["12", "24", "48", "96"]}
-                onChange={(p, ps) => {
-                  setPage(p);
-                  setPageSize(ps || 24);
-                }}
-              />
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: 16,
+                color: "#8c8c8c",
+                fontSize: 12,
+              }}
+            >
+              Данные обновлены • {new Date().toLocaleDateString("ru-RU")} в{" "}
+              {new Date().toLocaleTimeString("ru-RU")}
             </div>
           </>
         ) : (
@@ -703,14 +869,17 @@ export const HousingTable: React.FC = () => {
         )}
       </Spin>
 
-      <HousingModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        housing={selectedHousing}
+      <HousingDrawer
+        visible={drawerVisible}
+        housingId={selectedHousingId}
+        onClose={() => {
+          setDrawerVisible(false);
+          setSelectedHousingId(null);
+        }}
         getAddress={getAddress}
         formatDate={formatDate}
         formatRelativeDate={formatRelativeDate}
       />
-    </>
+    </div>
   );
 };

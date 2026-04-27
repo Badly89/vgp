@@ -13,7 +13,6 @@ import {
   Collapse,
   Breadcrumb,
   List,
-  Modal,
   Descriptions,
 } from "antd";
 import {
@@ -24,8 +23,9 @@ import {
   CalendarOutlined,
   ManOutlined,
   WomanOutlined,
-  BankOutlined,
   IdcardOutlined,
+  BankOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { ResidentModal } from "../Modals/ResidentModal";
 import { residentsApi, ResidentItem } from "../../services/api";
@@ -41,8 +41,9 @@ export const HouseResidents: React.FC = () => {
 
   const [residents, setResidents] = useState<ResidentItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [owners, setOwners] = useState<any[]>([]);
+  const [ownersLoaded, setOwnersLoaded] = useState(false);
 
-  // Декодируем параметры
   const decodedAddress = address ? decodeURIComponent(address) : "";
   const decodedHouseNumber = houseNumber ? decodeURIComponent(houseNumber) : "";
 
@@ -51,22 +52,17 @@ export const HouseResidents: React.FC = () => {
   );
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Форматирование даты
   const formatDate = (dateStr: string): string => {
     if (!dateStr) return "—";
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return dateStr;
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}.${month}.${year}`;
+      return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
     } catch {
       return dateStr;
     }
   };
 
-  // Получение ФИО
   const getFullName = (record: any): string => {
     return (
       record["ФИО"] ||
@@ -76,7 +72,6 @@ export const HouseResidents: React.FC = () => {
     );
   };
 
-  // Получение адреса
   const getAddress = (record: any): string => {
     if (!record) return "Без адреса";
     let addr =
@@ -89,7 +84,6 @@ export const HouseResidents: React.FC = () => {
     return addr ? String(addr) : "Без адреса";
   };
 
-  // Определение пола
   const getGender = (record: any): string | null => {
     if (record["Пол"]) return record["Пол"];
     const name = getFullName(record).toLowerCase();
@@ -99,7 +93,6 @@ export const HouseResidents: React.FC = () => {
     return null;
   };
 
-  // Проверка аварийности
   const isEmergency = (record: any): boolean => {
     let value = record["Аварийный дом"];
     if (Array.isArray(value)) value = value[0];
@@ -112,20 +105,29 @@ export const HouseResidents: React.FC = () => {
     return value === false || value === "Нет" || value === "нет";
   };
 
-  // Загрузка жителей дома
+  // Поиск собственника по адресу и квартире
+  const findOwner = (apartment: string): any => {
+    const result = owners.find((owner: any) => {
+      const ownerApt = String(owner["№ квартиры"] || "");
+
+      return ownerApt === apartment;
+    });
+
+    return result || null;
+  };
+
+  // Загрузка жителей
   useEffect(() => {
     const loadHouseResidents = async () => {
       if (!decodedAddress) return;
-
       setLoading(true);
 
       try {
         const allItems: ResidentItem[] = [];
         let page = 1;
-        const limit = 100; // ← уменьшаем до 100 (или 200, 300, но не больше 500)
+        const limit = 100;
         let hasMore = true;
 
-        // Нормализуем адрес для сравнения
         const normalizeAddress = (addr: string): string => {
           return addr
             .toLowerCase()
@@ -145,7 +147,6 @@ export const HouseResidents: React.FC = () => {
             page_size: limit,
             search: decodedAddress,
           });
-
           const rows = response.data;
 
           if (rows.length === 0) {
@@ -153,37 +154,27 @@ export const HouseResidents: React.FC = () => {
             break;
           }
 
-          // Фильтруем
-          const filtered = rows.filter((item) => {
+          const filtered = rows.filter((item: any) => {
             const itemAddress = getAddress(item);
             const itemHouse = String(item["№ дома"] || "");
-
-            // Если адрес "Без адреса", но номер дома совпадает — считаем, что подходит
             const isNoAddress = itemAddress === "Без адреса" || !itemAddress;
-
             const normalizedItemAddress = normalizeAddress(itemAddress);
             const normalizedItemHouse = itemHouse.trim();
 
             let addressMatch = false;
-
             if (isNoAddress) {
-              // Если адреса нет, но номер дома совпадает — ПРИНИМАЕМ
               addressMatch = true;
             } else {
-              // Нормальное сравнение адресов
               addressMatch =
                 normalizedItemAddress === normalizedTargetAddress ||
                 normalizedItemAddress.includes(normalizedTargetAddress) ||
                 normalizedTargetAddress.includes(normalizedItemAddress);
             }
-
             const houseMatch = normalizedItemHouse === normalizedTargetHouse;
-
             return addressMatch && houseMatch;
           });
 
           allItems.push(...filtered);
-
           if (rows.length < limit) {
             hasMore = false;
           } else {
@@ -202,29 +193,52 @@ export const HouseResidents: React.FC = () => {
     loadHouseResidents();
   }, [decodedAddress, decodedHouseNumber]);
 
+  // Загрузка собственников этого дома
+  useEffect(() => {
+    const loadOwners = async () => {
+      if (!decodedAddress || ownersLoaded) return;
+      try {
+        const response = await fetch(
+          `/api/owners/list?page=1&page_size=1000&search=${encodeURIComponent(decodedAddress)}`,
+        );
+
+        const data = await response.json();
+
+        const filtered = (data.data || []).filter((owner: any) => {
+          const ownerHouse = owner.house_number || "";
+
+          return ownerHouse === decodedHouseNumber;
+        });
+
+        setOwners(filtered);
+        setOwnersLoaded(true);
+      } catch (error) {
+        console.error("Ошибка загрузки собственников:", error);
+      }
+    };
+
+    loadOwners();
+  }, [decodedAddress, decodedHouseNumber, ownersLoaded]);
+
   // Группировка по квартирам
   const groupedByApartment = () => {
     const groups: Record<string, ResidentItem[]> = {};
-
     residents.forEach((item) => {
       const apartment =
         item["№ квартиры"] || item["Квартира"] || "Без квартиры";
       if (!groups[apartment]) groups[apartment] = [];
       groups[apartment].push(item);
     });
-
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       const numA = parseInt(a) || 0;
       const numB = parseInt(b) || 0;
       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
       return a.localeCompare(b, "ru");
     });
-
     return { groups, sortedKeys };
   };
 
   const { groups, sortedKeys } = groupedByApartment();
-
   const totalResidents = residents.length;
   const childrenCount = residents.filter(
     (r) => r["Ребенок"] === "Да" || r["Ребенок"] === true,
@@ -238,7 +252,6 @@ export const HouseResidents: React.FC = () => {
         : null
     : null;
 
-  // Если нет адреса - показываем сообщение
   if (!decodedAddress) {
     return (
       <div style={{ padding: 24 }}>
@@ -290,14 +303,12 @@ export const HouseResidents: React.FC = () => {
               Назад к списку домов
             </Button>
           </Space>
-
           <Space size="large">
             <HomeOutlined style={{ fontSize: 24, color: "#1890ff" }} />
             <span style={{ fontSize: 18, fontWeight: 600 }}>
               {decodedAddress}, дом №{decodedHouseNumber}
             </span>
           </Space>
-
           <Row gutter={16}>
             <Col>
               <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
@@ -346,6 +357,7 @@ export const HouseResidents: React.FC = () => {
                 (r) => r["Ребенок"] === "Да" || r["Ребенок"] === true,
               ).length;
               const apartmentAdults = apartmentItems.length - apartmentChildren;
+              const owner = findOwner(apartmentKey);
 
               return (
                 <Panel
@@ -363,9 +375,17 @@ export const HouseResidents: React.FC = () => {
                         <Tag color="green">{apartmentAdults} взр.</Tag>
                         <Tag color="orange">{apartmentChildren} дет.</Tag>
                       </Space>
+                      {owner && (
+                        <Tag icon={<TeamOutlined />} color="purple">
+                          {owner["ФИО"] ||
+                            owner["Наименование"] ||
+                            "Собственник"}
+                        </Tag>
+                      )}
                     </Space>
                   }
                 >
+                  {/* Список жителей */}
                   <List
                     dataSource={apartmentItems}
                     grid={{
@@ -377,12 +397,10 @@ export const HouseResidents: React.FC = () => {
                       xl: 4,
                       xxl: 4,
                     }}
-                    renderItem={(item) => {
+                    renderItem={(item: any) => {
                       const fullName = getFullName(item);
-                      const age = item["Возраст"] || item["Возраст (числом)"];
                       const genderValue = getGender(item);
                       const phone = item["Телефон"];
-                      const birthDate = item["Дата рождения"];
                       const isChildValue =
                         item["Ребенок"] === "Да" || item["Ребенок"] === true;
                       const categoryValue = item["Категория"];
@@ -397,24 +415,14 @@ export const HouseResidents: React.FC = () => {
                               width: "100%",
                               height: "100%",
                               cursor: "pointer",
-                              display: "flex",
-                              flexDirection: "column",
                             }}
-                            bodyStyle={{
-                              padding: "16px",
-                              flex: 1,
-                              display: "flex",
-                              flexDirection: "column",
-                            }}
+                            bodyStyle={{ padding: "16px" }}
                           >
                             <div
                               style={{
                                 display: "flex",
                                 alignItems: "flex-start",
                                 marginBottom: 12,
-
-                                flexDirection: "column",
-                                height: "100%",
                               }}
                             >
                               <Avatar
@@ -437,9 +445,6 @@ export const HouseResidents: React.FC = () => {
                                         : "#8c8c8c",
                                   marginRight: 12,
                                   flexShrink: 0,
-                                  display: "flex",
-
-                                  marginBottom: 12,
                                 }}
                               />
                               <div style={{ flex: 1, minWidth: 0 }}>
@@ -454,7 +459,6 @@ export const HouseResidents: React.FC = () => {
                                   {fullName}
                                 </div>
                                 <Space size={4} wrap>
-                                  {/* {age && <Tag color="blue">{age} лет</Tag>} */}
                                   {genderValue && (
                                     <Tag
                                       color={
@@ -475,30 +479,24 @@ export const HouseResidents: React.FC = () => {
                                   {relation && (
                                     <Tag color="purple">{relation}</Tag>
                                   )}
+
+                                  {/* ✅ Бейдж собственника */}
+                                  {owner &&
+                                    (owner["ФИО"] || owner["Наименование"]) ===
+                                      fullName && (
+                                      <Tag color="gold" icon={<TeamOutlined />}>
+                                        Собственник
+                                      </Tag>
+                                    )}
                                 </Space>
                               </div>
                             </div>
-
-                            <Space
-                              direction="vertical"
-                              size={4}
-                              style={{ width: "100%" }}
-                            >
-                              {/* {birthDate && (
-                                <div style={{ fontSize: 13, color: "#595959" }}>
-                                  <CalendarOutlined
-                                    style={{ marginRight: 8 }}
-                                  />
-                                  {formatDate(birthDate)}
-                                </div>
-                              )} */}
-                              {phone && (
-                                <div style={{ fontSize: 13, color: "#595959" }}>
-                                  <PhoneOutlined style={{ marginRight: 8 }} />
-                                  {phone}
-                                </div>
-                              )}
-                            </Space>
+                            {phone && (
+                              <div style={{ fontSize: 13, color: "#595959" }}>
+                                <PhoneOutlined style={{ marginRight: 8 }} />
+                                {phone}
+                              </div>
+                            )}
                           </Card>
                         </List.Item>
                       );
@@ -518,7 +516,6 @@ export const HouseResidents: React.FC = () => {
         )}
       </Spin>
 
-      {/* Модальное окно с детальной информацией о жителе */}
       <ResidentModal
         open={modalVisible}
         onClose={() => setModalVisible(false)}

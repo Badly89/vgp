@@ -16,6 +16,7 @@ import {
   Tooltip,
   Radio,
   List,
+  Drawer,
 } from "antd";
 import {
   SearchOutlined,
@@ -27,6 +28,7 @@ import {
   TeamOutlined,
   ManOutlined,
   WomanOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { ResidentModal } from "../Modals/ResidentModal";
 import { GerbSpinner } from "../GerbSpinner";
@@ -57,6 +59,8 @@ export const ResidentsTable: React.FC = () => {
   const [filteredAllData, setFilteredAllData] = useState<ResidentItem[]>([]);
 
   // Фильтры
+  const [filterVisible, setFilterVisible] = useState(false); // ← Панель фильтров
+
   const [searchText, setSearchText] = useState("");
   const [gender, setGender] = useState<string>();
   const [category, setCategory] = useState<string>();
@@ -290,10 +294,7 @@ export const ResidentsTable: React.FC = () => {
       });
 
       setPrivileges(Array.from(privilegeSet).sort());
-      console.log("Льготные категории:", Array.from(privilegeSet));
-    } catch (error) {
-      console.error("Ошибка загрузки льгот:", error);
-    }
+    } catch (error) {}
   };
 
   const loadAllDataForExport = async () => {
@@ -324,10 +325,7 @@ export const ResidentsTable: React.FC = () => {
       }
 
       setAllResidentsData(allData);
-      console.log(`Загружено ${allData.length} записей для экспорта`);
-    } catch (error) {
-      console.error("Ошибка загрузки всех данных:", error);
-    }
+    } catch (error) {}
   };
 
   const loadFilteredDataForExport = async () => {
@@ -374,11 +372,7 @@ export const ResidentsTable: React.FC = () => {
       }
 
       setFilteredAllData(allData);
-      console.log(
-        `Загружено ${allData.length} отфильтрованных записей для экспорта`,
-      );
     } catch (error) {
-      console.error("Ошибка загрузки отфильтрованных данных:", error);
       setFilteredAllData(data); // Fallback на текущую страницу
     }
   };
@@ -388,6 +382,13 @@ export const ResidentsTable: React.FC = () => {
     loadFilteredDataForExport();
     loadPrivileges(); // ← ДОБАВИТЬ
   }, [page, pageSize, groupBy, gender, category, isChild, vidFond, privilege]);
+
+  useEffect(() => {
+    // Если открыли из HousingDrawer — включаем группировку по домам
+    if (window.location.pathname.includes("/residents/house/")) {
+      setGroupBy("house");
+    }
+  }, []);
 
   const handleSearch = () => {
     setPage(1);
@@ -524,10 +525,12 @@ export const ResidentsTable: React.FC = () => {
   };
 
   return (
-    <>
+    <div style={{ padding: "0 24px" }}>
+      {/* Верхняя панель */}
       <Card
+        size="small"
         style={{
-          marginBottom: 24,
+          marginBottom: 16,
           position: "sticky",
           top: 0,
           zIndex: 100,
@@ -535,155 +538,224 @@ export const ResidentsTable: React.FC = () => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         }}
       >
-        <Space direction="horizontal" size="middle" style={{ width: "100%" }}>
-          <Space
-            wrap
-            style={{ width: "100%", justifyContent: "space-between" }}
-          >
-            <Space wrap>
-              <Input
-                placeholder="Поиск по ФИО, адресу, телефону..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onPressEnter={handleSearch}
-                prefix={<SearchOutlined />}
-                style={{ width: 280 }}
-                allowClear
-              />
-              <Select
-                placeholder="Пол"
-                value={gender}
-                onChange={setGender}
-                style={{ width: 120 }}
-                allowClear
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space>
+            <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
+              👥 {groupBy === "house" ? "Всего домов" : "Всего жителей"}:{" "}
+              {total}
+            </Tag>
+            {/* Активные фильтры тегами */}
+            {searchText && (
+              <Tag
+                closable
+                onClose={() => {
+                  setSearchText("");
+                  setPage(1);
+                }}
               >
-                {genders.map((g) => (
-                  <Option key={g} value={g}>
-                    {g}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Категория"
-                value={category}
-                onChange={setCategory}
-                style={{ width: 140 }}
-                allowClear
+                🔍 {searchText}
+              </Tag>
+            )}
+            {gender && (
+              <Tag closable onClose={() => setGender(undefined)} color="pink">
+                {gender}
+              </Tag>
+            )}
+            {category && (
+              <Tag closable onClose={() => setCategory(undefined)} color="cyan">
+                {category}
+              </Tag>
+            )}
+            {isChild && (
+              <Tag
+                closable
+                onClose={() => setIsChild(undefined)}
+                color="orange"
               >
-                {categories.map((c) => (
-                  <Option key={c} value={c}>
-                    {c}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Ребенок"
-                value={isChild}
-                onChange={setIsChild}
-                style={{ width: 110 }}
-                allowClear
+                {isChild === "yes" ? "Ребенок" : "Не ребенок"}
+              </Tag>
+            )}
+            {vidFond && (
+              <Tag closable onClose={() => setVidFond(undefined)} color="green">
+                {vidFond}
+              </Tag>
+            )}
+            {privilege && (
+              <Tag
+                closable
+                onClose={() => setPrivilege(undefined)}
+                color="gold"
               >
-                <Option value="yes">Да</Option>
-                <Option value="no">Нет</Option>
-              </Select>
-              <Select
-                placeholder="Льготные категории"
-                value={privilege}
-                onChange={setPrivilege}
-                style={{ width: 180 }}
-                allowClear
-              >
-                {privileges.map((p) => (
-                  <Option key={p} value={p}>
-                    {p}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Вид фонда"
-                value={vidFond}
-                onChange={setVidFond}
-                style={{ width: 160 }}
-                allowClear
-              >
-                <Option value="Коммерческий">Коммерческий</Option>
-                <Option value="Специализированный">Специализированный</Option>
-                <Option value="Маневренный">Маневренный</Option>
-              </Select>
+                {privilege}
+              </Tag>
+            )}
+          </Space>
+
+          <Space>
+            <Tooltip title="Фильтры">
               <Button
-                type="primary"
-                onClick={handleSearch}
-                icon={<SearchOutlined />}
-              >
-                Поиск
-              </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
-                Сбросить
-              </Button>
-              <ExportButton
-                data={filteredAllData.length > 0 ? filteredAllData : data}
-                title={
+                icon={<FilterOutlined />}
+                type={
                   searchText ||
                   gender ||
                   category ||
                   isChild ||
                   vidFond ||
                   privilege
-                    ? "Жители (отфильтровано)"
-                    : "Жители"
+                    ? "primary"
+                    : "default"
                 }
-                filename={
-                  searchText
-                    ? `residents_${searchText.substring(0, 20)}`
-                    : gender
-                      ? `residents_${gender}`
-                      : category
-                        ? `residents_${category}`
-                        : privilege
-                          ? `residents_${privilege}`
-                          : "residents_all"
-                }
-                columns={[
-                  { key: "ФИО", label: "ФИО" },
-                  { key: "Пол", label: "Пол" },
-                  { key: "Возраст (числом)", label: "Возраст" },
-                  { key: "Категория", label: "Категория" },
-                  { key: "Телефон", label: "Телефон" },
-                  { key: "Вид фонда", label: "Вид фонда" },
-                  { key: "Льготные категории", label: "Льготные категории" },
-                ]}
-                disabled={loading}
-                size="small"
+                onClick={() => setFilterVisible(true)}
               />
-            </Space>
-          </Space>
-
-          <Space wrap style={{ width: "100%" }}>
-            <Space>
-              <span style={{ color: "#8c8c8c" }}>Группировать:</span>
-              <Radio.Group
-                value={groupBy}
-                onChange={(e) => {
-                  setGroupBy(e.target.value);
-                  setPage(1);
-                  setSearchParams({ group: e.target.value });
-                }}
-                buttonStyle="solid"
-                size="small"
-              >
-                <Radio.Button value="none">Без группировки</Radio.Button>
-                <Radio.Button value="house">По домам</Radio.Button>
-              </Radio.Group>
-            </Space>
-            <Space style={{ alignItems: "end" }}>
-              <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
-                👥 {groupBy === "house" ? "Всего домов" : "Всего жителей"}:{" "}
-                {total}
-              </Tag>
-            </Space>
+            </Tooltip>
+            <Radio.Group
+              value={groupBy}
+              onChange={(e) => {
+                setGroupBy(e.target.value);
+                setPage(1);
+                setSearchParams({ group: e.target.value });
+              }}
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio.Button value="none">Без группировки</Radio.Button>
+              <Radio.Button value="house">По домам</Radio.Button>
+            </Radio.Group>
+            <ExportButton
+              data={filteredAllData.length > 0 ? filteredAllData : data}
+              title={
+                searchText ||
+                gender ||
+                category ||
+                isChild ||
+                vidFond ||
+                privilege
+                  ? "Жители (отфильтровано)"
+                  : "Жители"
+              }
+              filename="residents_export"
+              columns={[
+                { key: "ФИО", label: "ФИО" },
+                { key: "Пол", label: "Пол" },
+                { key: "Возраст (числом)", label: "Возраст" },
+                { key: "Категория", label: "Категория" },
+                { key: "Телефон", label: "Телефон" },
+                { key: "Вид фонда", label: "Вид фонда" },
+                { key: "Льготные категории", label: "Льготные категории" },
+              ]}
+              disabled={loading}
+            />
           </Space>
         </Space>
       </Card>
+
+      {/* Выдвижная панель фильтров */}
+      <Drawer
+        title="🔍 Фильтры жителей"
+        placement="right"
+        width={400}
+        open={filterVisible}
+        onClose={() => setFilterVisible(false)}
+      >
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Input
+            placeholder="Поиск по ФИО, адресу, телефону..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            prefix={<SearchOutlined />}
+            size="large"
+            allowClear
+          />
+          <Select
+            placeholder="Пол"
+            value={gender}
+            onChange={setGender}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            {genders.map((g) => (
+              <Option key={g} value={g}>
+                {g}
+              </Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Категория"
+            value={category}
+            onChange={setCategory}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            {categories.map((c) => (
+              <Option key={c} value={c}>
+                {c}
+              </Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Ребенок"
+            value={isChild}
+            onChange={setIsChild}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            <Option value="yes">Да</Option>
+            <Option value="no">Нет</Option>
+          </Select>
+          <Select
+            placeholder="Вид фонда"
+            value={vidFond}
+            onChange={setVidFond}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            <Option value="Коммерческий">Коммерческий</Option>
+            <Option value="Специализированный">Специализированный</Option>
+            <Option value="Маневренный">Маневренный</Option>
+          </Select>
+          <Select
+            placeholder="Льготные категории"
+            value={privilege}
+            onChange={setPrivilege}
+            style={{ width: "100%" }}
+            size="large"
+            allowClear
+          >
+            {privileges.map((p) => (
+              <Option key={p} value={p}>
+                {p}
+              </Option>
+            ))}
+          </Select>
+          <Space style={{ width: "100%" }}>
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={() => {
+                handleSearch();
+                setFilterVisible(false);
+              }}
+              block
+            >
+              Применить
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                handleReset();
+                setFilterVisible(false);
+              }}
+              block
+            >
+              Сбросить
+            </Button>
+          </Space>
+        </Space>
+      </Drawer>
 
       <Spin
         indicator={<GerbSpinner size={50} animation="spin3d" />}
@@ -820,6 +892,6 @@ export const ResidentsTable: React.FC = () => {
         isEmergency={isEmergency}
         isNotEmergency={(r) => !isEmergency(r)}
       />
-    </>
+    </div>
   );
 };
