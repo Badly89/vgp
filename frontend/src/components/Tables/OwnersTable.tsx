@@ -30,7 +30,23 @@ import {
 import { ownersApi, OwnerItem } from "../../services/api";
 import { OwnerModal } from "../Modals/OwnerModal";
 
+// В начале файла или в api.ts
+interface OwnersGroupedResponse {
+  data: Array<{
+    address: string;
+    house_number: string;
+    owners_count: number;
+    owners: OwnerItem[];
+  }>;
+  total_groups: number;
+  total_owners: number;
+  total_all_owners: number; // ← ДОБАВИТЬ
+  page: number;
+  page_size: number;
+}
+
 export const OwnersTable: React.FC = () => {
+  const [totalAllOwners, setTotalAllOwners] = useState<number>(0);
   const [allData, setAllData] = useState<OwnerItem[]>([]);
   const [filteredData, setFilteredData] = useState<OwnerItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,15 +67,34 @@ export const OwnersTable: React.FC = () => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const response = await ownersApi.getGroupedByAddress({
-        page: 1,
-        page_size: 5000,
-      });
+      let allGroups: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      let totalOwnersCount = 0;
 
-      if (response.data) {
-        setAllData(response.data);
-        applySearch(response.data, searchText);
+      // Загружаем все страницы
+      while (hasMore) {
+        const response = await ownersApi.getGroupedByAddress({
+          page,
+          page_size: 1000,
+        });
+
+        if (response.data && response.data.length > 0) {
+          allGroups = [...allGroups, ...response.data];
+          totalOwnersCount = response.total_all_owners || response.total_owners;
+          page++;
+
+          if (response.data.length < 1000) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
       }
+
+      setAllData(allGroups);
+      setTotalAllOwners(totalOwnersCount);
+      applySearch(allGroups, searchText);
     } catch (error) {
       console.error("Ошибка загрузки собственников:", error);
     } finally {
@@ -171,7 +206,7 @@ export const OwnersTable: React.FC = () => {
                 Объектов: {stats.totalObjects}
               </Tag>
               <Tag icon={<TeamOutlined />} color="green">
-                Собственников: {stats.totalOwners}
+                Собственников: {totalAllOwners || stats.totalOwners}
               </Tag>
             </Space>
           </Space>

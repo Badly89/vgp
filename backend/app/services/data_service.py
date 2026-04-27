@@ -16,6 +16,24 @@ class DataService:
         self._residents_cache = None
         self._owners_cache = None
         self._housing_cache = None
+        self._organisations_cache = None
+    
+    def _extract_select_value(self, value: Any) -> str:
+        """Извлечение значения из single select DTable"""
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list) and value:
+            item = value[0]
+            if isinstance(item, str):
+                return item
+            if isinstance(item, dict):
+                return item.get("display_value") or item.get("value") or str(item)
+            return str(item)
+        if isinstance(value, dict):
+            return value.get("display_value") or value.get("value") or str(value)
+        return str(value)
         
     @staticmethod
     def extract_house_number(address: str) -> int:
@@ -221,11 +239,11 @@ class DataService:
     async def get_all_owners(self) -> List[Dict]:
         """Получить всех собственников (с кэшированием)"""
         if self._owners_cache is None:
-            self._owners_cache = await self._get_cached_or_load(
-                "dtable:all_owners",
-                settings.TABLE_OWNERS
-            )
+            print("🔄 Загрузка всех собственников через SQL...")
+            self._owners_cache = await self._load_owners_with_sql_pagination()
+            print(f"✅ Загружено {len(self._owners_cache)} собственников")
         return self._owners_cache
+
     
     async def get_all_housing(self) -> List[Dict]:
         """Получить все объекты жилого фонда (с кэшированием)"""
@@ -236,6 +254,14 @@ class DataService:
             )
         return self._housing_cache
     
+    async def get_all_residents(self) -> List[Dict]:
+        """Получить всех жителей (с кэшированием)"""
+        if self._residents_cache is None:
+            print("🔄 Загрузка всех жителей через SQL...")
+            self._residents_cache = await self._load_all_with_sql_pagination(settings.TABLE_RESIDENTS)
+            print(f"✅ Загружено {len(self._residents_cache)} жителей")
+        return self._residents_cache
+
     async def _get_residents_list_fallback(
         self,
         page: int,
@@ -784,7 +810,8 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
-        sort_order: str = "ASC"
+        sort_order: str = "ASC",
+        vid_fond: Optional[str] = None,  # добавить
     ) -> Dict[str, Any]:
         """Получение списка жителей из MariaDB"""
         try:
@@ -811,6 +838,11 @@ class DataService:
                 where_parts.append("is_child = TRUE")
             elif is_child == "no":
                 where_parts.append("is_child = FALSE")
+            
+            # ✅ ДОБАВЛЯЕМ ФИЛЬТР ПО ВИДУ ФОНДА
+            if vid_fond:
+                where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")  # ✅ Фильтр
+                params.append(vid_fond)
             
             where_clause = " AND ".join(where_parts)
             
@@ -1297,6 +1329,7 @@ class DataService:
             
             # Загружаем всех собственников
             all_owners = await self.get_all_owners()
+            total_all_owners = len(all_owners)  # ← ДОБАВЛЕНО: общее количество всех собственников
             print(f"📊 Всего загружено {len(all_owners)} собственников")
             
             # Функция для безопасного получения адреса
@@ -1384,7 +1417,8 @@ class DataService:
             return {
                 "data": paginated_groups,
                 "total_groups": total_groups,
-                "total_owners": sum(g["owners_count"] for g in groups),
+                "total_owners": sum(g["owners_count"] for g in groups),  # отфильтрованные
+                "total_all_owners": total_all_owners,  # ← ДОБАВЛЕНО: все собственники
                 "page": page,
                 "page_size": page_size,
                 "total_pages": (total_groups + page_size - 1) // page_size if total_groups > 0 else 1
@@ -1826,7 +1860,8 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
-        sort_order: str = "ASC"
+        sort_order: str = "ASC",
+        vid_fond: Optional[str] = None
     ) -> Dict[str, Any]:
         """Получение жителей из MariaDB"""
         offset = (page - 1) * page_size
@@ -1852,6 +1887,12 @@ class DataService:
             where_parts.append("is_child = TRUE")
         elif is_child == "no":
             where_parts.append("is_child = FALSE")
+        
+        if vid_fond:
+            where_parts.append("JSON_UNQUOTE(JSON_EXTRACT(data, '$.Вид фонда')) = %s")
+            params.append(vid_fond)
+            # Добавить условие, что значение не null
+            where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') != 'null'")
         
         where_clause = " AND ".join(where_parts)
         

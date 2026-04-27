@@ -13,9 +13,11 @@ async def get_residents_list(
     gender: Optional[str] = None,
     category: Optional[str] = None,
     is_child: Optional[str] = None,
+    vid_fond: Optional[str] = None,  # ✅ Параметр
     sort_field: Optional[str] = None,
     sort_order: str = Query("ASC", regex="^(ASC|DESC)$"),
-    group_by: Optional[str] = None
+    group_by: Optional[str] = None,
+    
 ):
     """Получение списка жителей"""
     try:
@@ -28,7 +30,8 @@ async def get_residents_list(
             result = await data_service.get_residents_from_db(
                 page=page, page_size=page_size,
                 search=search, gender=gender, category=category, is_child=is_child,
-                sort_field=sort_field, sort_order=sort_order
+                sort_field=sort_field, sort_order=sort_order, 
+                vid_fond=vid_fond
             )
             return result
     except Exception as e:

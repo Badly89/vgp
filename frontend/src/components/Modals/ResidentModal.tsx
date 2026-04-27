@@ -189,6 +189,23 @@ export const ResidentModal: React.FC<ResidentModalProps> = ({
                 </div>
               </div>
             </Descriptions.Item>
+            <Descriptions.Item label="Вид фонда">
+              <Tag
+                color={
+                  resident?.["Вид фонда"]?.toLowerCase().includes("спец")
+                    ? "blue"
+                    : resident?.["Вид фонда"]?.toLowerCase().includes("маневр")
+                      ? "orange"
+                      : resident?.["Вид фонда"]
+                            ?.toLowerCase()
+                            .includes("коммерч")
+                        ? "green"
+                        : "default"
+                }
+              >
+                {resident?.["Вид фонда"] || "—"}
+              </Tag>
+            </Descriptions.Item>
 
             {resident["Дата регистрации"] && (
               <Descriptions.Item label="Дата регистрации">

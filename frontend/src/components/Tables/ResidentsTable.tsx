@@ -56,6 +56,7 @@ export const ResidentsTable: React.FC = () => {
   const [gender, setGender] = useState<string>();
   const [category, setCategory] = useState<string>();
   const [isChild, setIsChild] = useState<string>();
+  const [vidFond, setVidFond] = useState<string>(); // ✅ Состояние
 
   // Списки для фильтров
   const [genders, setGenders] = useState<string[]>([]);
@@ -138,6 +139,7 @@ export const ResidentsTable: React.FC = () => {
           gender: gender || undefined,
           category: category || undefined,
           is_child: isChild || undefined,
+          vid_fond: vidFond || undefined, // ✅ Передаем
         });
 
         const residents = response.data || [];
@@ -217,6 +219,7 @@ export const ResidentsTable: React.FC = () => {
           gender: gender || undefined,
           category: category || undefined,
           is_child: isChild || undefined,
+          vid_fond: vidFond || undefined, // ✅ Передаем
         });
 
         setData(response.data || []);
@@ -235,7 +238,7 @@ export const ResidentsTable: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [page, pageSize, groupBy, gender, category, isChild]);
+  }, [page, pageSize, groupBy, gender, category, isChild, vidFond]);
 
   const handleSearch = () => {
     setPage(1);
@@ -247,6 +250,7 @@ export const ResidentsTable: React.FC = () => {
     setGender(undefined);
     setCategory(undefined);
     setIsChild(undefined);
+    setVidFond(undefined);
     setPage(1);
     loadData();
   };
@@ -313,6 +317,26 @@ export const ResidentsTable: React.FC = () => {
                 )}
                 {isChildValue && <Tag color="orange">Ребенок</Tag>}
                 {categoryValue && <Tag color="cyan">{categoryValue}</Tag>}
+                {/* После categoryValue */}
+                {item["Вид фонда"] && (
+                  <Tag
+                    color={
+                      String(item["Вид фонда"]).toLowerCase().includes("спец")
+                        ? "blue"
+                        : String(item["Вид фонда"])
+                              .toLowerCase()
+                              .includes("маневр")
+                          ? "orange"
+                          : String(item["Вид фонда"])
+                                .toLowerCase()
+                                .includes("коммерч")
+                            ? "green"
+                            : "default"
+                    }
+                  >
+                    {item["Вид фонда"]}
+                  </Tag>
+                )}
               </Space>
             </div>
           </div>
@@ -425,6 +449,17 @@ export const ResidentsTable: React.FC = () => {
               >
                 <Option value="yes">Да</Option>
                 <Option value="no">Нет</Option>
+              </Select>
+              <Select
+                placeholder="Вид фонда"
+                value={vidFond}
+                onChange={setVidFond}
+                style={{ width: 160 }}
+                allowClear
+              >
+                <Option value="Коммерческий">Коммерческий</Option>
+                <Option value="Специализированный">Специализированный</Option>
+                <Option value="Маневренный">Маневренный</Option>
               </Select>
               <Button
                 type="primary"

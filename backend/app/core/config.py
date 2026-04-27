@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     TABLE_ORGANIZATIONS: str = "Место работы"
     
     # MariaDB
-    DB_HOST: str = "localhost"
-    DB_PORT: int = 3306
+    DB_HOST: str = "10.87.0.59"
+    DB_PORT: int = 3308
     DB_USER: str = "housing_user"
     DB_PASSWORD: str = ""
     DB_NAME: str = "housing_registry"
