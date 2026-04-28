@@ -31,6 +31,10 @@ import {
 } from "@ant-design/icons";
 import { housingApi, ownersApi } from "../../services/api";
 import { GerbSpinner } from "../GerbSpinner";
+import { THEME } from "../../styles/theme";
+
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 const { Text } = Typography;
 
@@ -51,7 +55,7 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
   formatDate,
   formatRelativeDate,
 }) => {
-  const navigate = useNavigate(); // ← ДОБАВИТЬ ЭТУ СТРОКУ
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [housing, setHousing] = useState<any>(null);
   const [view, setView] = useState<"info" | "owners" | "residents">("info");
@@ -111,18 +115,18 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
   };
 
   const getStatusColor = () => {
-    if (!housing) return "#52c41a";
+    if (!housing) return COLORS.success;
     if (
       housing["Аварийный / не аварийный"] === true ||
       housing["Аварийный / не аварийный"] === "Да"
     )
-      return "#ff4d4f";
+      return COLORS.danger;
     const year = parseInt(
       housing["Год ввода"] || housing["Год постройки"] || "0",
     );
-    if (year >= 2010) return "#52c41a";
-    if (year >= 1980) return "#1890ff";
-    if (year >= 1960) return "#faad14";
+    if (year >= 2010) return COLORS.success;
+    if (year >= 1980) return COLORS.info;
+    if (year >= 1960) return COLORS.warning;
     return "#ff7a45";
   };
 
@@ -173,7 +177,9 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
       dataIndex: "ФИО",
       key: "name",
       render: (text: string, record: any) => (
-        <Text strong>{text || record["Наименование"] || "Не указано"}</Text>
+        <Text strong style={{ color: COLORS.textPrimary }}>
+          {text || record["Наименование"] || "Не указано"}
+        </Text>
       ),
     },
     {
@@ -181,14 +187,42 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
       dataIndex: "Вид собственности",
       key: "type",
       width: 120,
-      render: (text: string) => (text ? <Tag color="purple">{text}</Tag> : "—"),
+      render: (text: string) =>
+        text ? (
+          <Tag
+            style={{
+              background: COLORS.primary,
+              color: "#fff",
+              border: "none",
+              borderRadius: RADIUS.xs,
+            }}
+          >
+            {text}
+          </Tag>
+        ) : (
+          "—"
+        ),
     },
     {
       title: "Доля",
       dataIndex: "Доля",
       key: "share",
       width: 80,
-      render: (text: string) => (text ? <Tag color="blue">{text}</Tag> : "—"),
+      render: (text: string) =>
+        text ? (
+          <Tag
+            style={{
+              background: COLORS.northernIce,
+              color: COLORS.primaryDark,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: RADIUS.xs,
+            }}
+          >
+            {text}
+          </Tag>
+        ) : (
+          "—"
+        ),
     },
     {
       title: "Контакты",
@@ -197,13 +231,15 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
       render: (_: any, record: any) => (
         <Space direction="vertical" size={0}>
           {record["Телефон"] && (
-            <Text style={{ fontSize: 12 }}>
-              <PhoneOutlined /> {record["Телефон"]}
+            <Text style={{ fontSize: 12, color: COLORS.textPrimary }}>
+              <PhoneOutlined style={{ color: COLORS.terracotta }} />{" "}
+              {record["Телефон"]}
             </Text>
           )}
           {record["Email"] && (
-            <Text style={{ fontSize: 12 }}>
-              <MailOutlined /> {record["Email"]}
+            <Text style={{ fontSize: 12, color: COLORS.textPrimary }}>
+              <MailOutlined style={{ color: COLORS.northernIce }} />{" "}
+              {record["Email"]}
             </Text>
           )}
         </Space>
@@ -227,14 +263,17 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                 items={[
                   {
                     title: (
-                      <a onClick={() => setView("info")}>
+                      <a
+                        onClick={() => setView("info")}
+                        style={{ color: COLORS.textSecondary }}
+                      >
                         <HomeOutlined /> Объект
                       </a>
                     ),
                   },
                   {
                     title: (
-                      <span>
+                      <span style={{ color: COLORS.textPrimary }}>
                         <TeamOutlined /> Собственники ({owners.length})
                       </span>
                     ),
@@ -264,14 +303,17 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
               items={[
                 {
                   title: (
-                    <a onClick={() => setView("info")}>
+                    <a
+                      onClick={() => setView("info")}
+                      style={{ color: COLORS.textSecondary }}
+                    >
                       <HomeOutlined /> Объект
                     </a>
                   ),
                 },
                 {
                   title: (
-                    <span>
+                    <span style={{ color: COLORS.textPrimary }}>
                       <UserOutlined /> Жители ({getResidentsCount()})
                     </span>
                   ),
@@ -289,8 +331,8 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
             <div
               style={{
                 padding: "16px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                borderRadius: 12,
+                background: COLORS.gradientHeader,
+                borderRadius: RADIUS.lg,
                 color: "#fff",
               }}
             >
@@ -315,6 +357,7 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                       background: "rgba(255,255,255,0.2)",
                       color: "#fff",
                       border: "none",
+                      borderRadius: RADIUS.sm,
                     }}
                   >
                     {housing["Вид жилья"] || "—"}
@@ -342,12 +385,17 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                 <Card
                   size="small"
                   styles={{ body: { padding: "12px", textAlign: "center" } }}
+                  style={{
+                    borderRadius: RADIUS.md,
+                    border: `1px solid ${COLORS.borderLight}`,
+                    boxShadow: COLORS.shadowSmall,
+                  }}
                 >
                   <Statistic
                     title="Жителей"
                     value={getResidentsCount()}
                     prefix={<UserOutlined />}
-                    valueStyle={{ fontSize: 24, color: "#1890ff" }}
+                    valueStyle={{ fontSize: 24, color: COLORS.northernBlue }}
                   />
                 </Card>
               </Col>
@@ -355,12 +403,17 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                 <Card
                   size="small"
                   styles={{ body: { padding: "12px", textAlign: "center" } }}
+                  style={{
+                    borderRadius: RADIUS.md,
+                    border: `1px solid ${COLORS.borderLight}`,
+                    boxShadow: COLORS.shadowSmall,
+                  }}
                 >
                   <Statistic
                     title="Собственников"
                     value={getOwnersCount()}
                     prefix={<TeamOutlined />}
-                    valueStyle={{ fontSize: 24, color: "#722ed1" }}
+                    valueStyle={{ fontSize: 24, color: COLORS.terracotta }}
                   />
                 </Card>
               </Col>
@@ -368,23 +421,35 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                 <Card
                   size="small"
                   styles={{ body: { padding: "12px", textAlign: "center" } }}
+                  style={{
+                    borderRadius: RADIUS.md,
+                    border: `1px solid ${COLORS.borderLight}`,
+                    boxShadow: COLORS.shadowSmall,
+                  }}
                 >
                   <Statistic
                     title="Квартир"
                     value={housing["квартир всего"] || 0}
                     prefix={<HomeOutlined />}
-                    valueStyle={{ fontSize: 24, color: "#52c41a" }}
+                    valueStyle={{ fontSize: 24, color: COLORS.northernAurora }}
                   />
                 </Card>
               </Col>
             </Row>
 
             {/* Основная информация */}
-            <Card title="🏠 Основная информация" size="small">
+            <Card
+              title="🏠 Основная информация"
+              size="small"
+              style={{
+                borderRadius: RADIUS.lg,
+                border: `1px solid ${COLORS.borderLight}`,
+              }}
+            >
               <Descriptions column={1} size="small" bordered>
                 <Descriptions.Item label="Адрес">
                   <EnvironmentOutlined
-                    style={{ marginRight: 8, color: "#1890ff" }}
+                    style={{ marginRight: 8, color: COLORS.terracotta }}
                   />
                   {getAddress(housing)}, д. {housing["Номер дома"] || "—"}
                 </Descriptions.Item>
@@ -392,7 +457,9 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                   {housing["Тип здания"] || "—"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Год постройки">
-                  <CalendarOutlined style={{ marginRight: 8 }} />
+                  <CalendarOutlined
+                    style={{ marginRight: 8, color: COLORS.textSecondary }}
+                  />
                   {housing["Год ввода"] || housing["Год постройки"] || "—"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Этажность">
@@ -417,7 +484,15 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                     : "—"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Категория">
-                  <Tag color="blue">{housing["Вид жилья"] || "—"}</Tag>
+                  <Tag
+                    style={{
+                      background: COLORS.northernIce,
+                      color: COLORS.primaryDark,
+                      border: `1px solid ${COLORS.border}`,
+                    }}
+                  >
+                    {housing["Вид жилья"] || "—"}
+                  </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Тех. состояние">
                   <Space>
@@ -437,7 +512,14 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
             </Card>
 
             {/* Ссылки на связанные данные */}
-            <Card title="🔗 Связанные данные" size="small">
+            <Card
+              title="🔗 Связанные данные"
+              size="small"
+              style={{
+                borderRadius: RADIUS.lg,
+                border: `1px solid ${COLORS.borderLight}`,
+              }}
+            >
               <Space
                 direction="vertical"
                 size="middle"
@@ -450,11 +532,18 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                     const addr =
                       housing?.["Почтовый адрес"] || getAddress(housing);
                     const house = housing?.["Номер дома"] || "0";
-                    console.log("Переход к собственникам:", addr, house); // ← ЛОГ
                     onClose();
                     navigate(
                       `/owners?address=${encodeURIComponent(addr)}&house=${encodeURIComponent(house)}`,
                     );
+                  }}
+                  style={{
+                    background: COLORS.terracotta,
+                    borderColor: COLORS.terracotta,
+                    color: "#fff",
+                    borderRadius: RADIUS.md,
+                    height: 40,
+                    fontWeight: 600,
                   }}
                 >
                   Собственники дома ({getOwnersCount()})
@@ -468,22 +557,33 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                     const addr =
                       housing?.["Почтовый адрес"] || getAddress(housing);
                     const house = housing?.["Номер дома"] || "0";
-                    console.log("Переход к собственникам:", { addr, house }); // ← ЛОГ
                     onClose();
                     navigate(
-                      `/owners?address=${encodeURIComponent(addr)}&house=${encodeURIComponent(house)}`,
+                      `/residents/house/${encodeURIComponent(addr)}/${encodeURIComponent(house)}`,
                     );
                   }}
+                  style={{
+                    borderColor: COLORS.border,
+                    color: COLORS.textPrimary,
+                    borderRadius: RADIUS.md,
+                    height: 40,
+                  }}
                 >
-                  Жители дома ({housing["Количество жильцов в доме"] || "?"}
-                  )
+                  Жители дома ({housing["Количество жильцов в доме"] || "?"})
                   <ArrowRightOutlined style={{ marginLeft: 8 }} />
                 </Button>
               </Space>
             </Card>
 
             {/* Даты */}
-            <Card title="📅 Сроки" size="small">
+            <Card
+              title="📅 Сроки"
+              size="small"
+              style={{
+                borderRadius: RADIUS.lg,
+                border: `1px solid ${COLORS.borderLight}`,
+              }}
+            >
               <Descriptions column={1} size="small" bordered>
                 <Descriptions.Item label="Ожидаемый снос">
                   {housing["Ожидаемый снос"] || "—"}
@@ -508,8 +608,8 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
     <Drawer
       title={
         <Space>
-          <HomeOutlined style={{ color: "#1890ff" }} />
-          <span style={{ fontWeight: 600 }}>
+          <HomeOutlined style={{ color: COLORS.terracotta }} />
+          <span style={{ fontWeight: 600, color: COLORS.textPrimary }}>
             {housing
               ? `${getAddress(housing)}, д. ${housing["Номер дома"] || "—"}`
               : "Загрузка..."}
@@ -521,6 +621,7 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
       onClose={onClose}
       open={visible}
       destroyOnClose
+      styles={{ body: { padding: 0, background: COLORS.background } }}
     >
       <Spin
         indicator={<GerbSpinner size={80} animation="pulse" />}

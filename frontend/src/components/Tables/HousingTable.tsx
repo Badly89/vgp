@@ -1,4 +1,3 @@
-// src/components/HousingTable.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
@@ -12,7 +11,6 @@ import {
   Pagination,
   Spin,
   Empty,
-  Collapse,
   Radio,
   Table,
   Drawer,
@@ -33,6 +31,10 @@ import { HousingCard } from "./HousingCard";
 import { HousingDrawer } from "../Drawers/HousingDrawer";
 import { GerbSpinner } from "../GerbSpinner";
 import { ExportButton } from "../ExportButton";
+import { THEME } from "../../styles/theme";
+
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 const { Option } = Select;
 
@@ -85,16 +87,15 @@ export const HousingTable: React.FC = () => {
   const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
 
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [groupBy, setGroupBy] = useState<
-    "none" | "housingType" | "buildingType"
-  >("none");
+
+  // Убрано состояние groupBy
 
   // Drawer вместо Modal
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedHousingId, setSelectedHousingId] = useState<string | null>(
     null,
   );
-  const [filterVisible, setFilterVisible] = useState(false); // ← Панель фильтров
+  const [filterVisible, setFilterVisible] = useState(false);
 
   const [exportData, setExportData] = useState<any[]>([]);
 
@@ -290,37 +291,8 @@ export const HousingTable: React.FC = () => {
   const displayData = useMemo(() => {
     const sorted = sortByHouseNumber(filteredData, sortOrder);
     const start = (page - 1) * pageSize;
-    const paginated = sorted.slice(start, start + pageSize);
-
-    if (groupBy === "none") return paginated;
-
-    const groups: Record<string, HousingItem[]> = {};
-    paginated.forEach((item) => {
-      const key =
-        groupBy === "housingType"
-          ? item["Категория"] ||
-            item["Вид жилья"] ||
-            item["Тип жилья"] ||
-            "Не указано"
-          : item["Тип здания"] || item["Тип объекта"] || "Не указано";
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(item);
-    });
-
-    const result: any[] = [];
-    Object.keys(groups)
-      .sort((a, b) => a.localeCompare(b, "ru"))
-      .forEach((key) => {
-        result.push({
-          _id: `group-${key}`,
-          isGroupHeader: true,
-          groupName: key,
-          groupCount: groups[key].length,
-        });
-        result.push(...groups[key]);
-      });
-    return result;
-  }, [filteredData, sortOrder, page, pageSize, groupBy]);
+    return sorted.slice(start, start + pageSize);
+  }, [filteredData, sortOrder, page, pageSize]);
 
   const emergencyStats = useMemo(() => {
     let emergency = 0,
@@ -387,7 +359,6 @@ export const HousingTable: React.FC = () => {
     setBuildingType(undefined);
     setEmergencyFilter(undefined);
     setSortOrder("asc");
-    setGroupBy("none");
   };
 
   // Новая функция для открытия Drawer
@@ -413,9 +384,11 @@ export const HousingTable: React.FC = () => {
             e.stopPropagation();
             showDetails(record._id);
           }}
-          style={{ fontWeight: 500 }}
+          style={{ fontWeight: 500, color: COLORS.textPrimary }}
         >
-          <EnvironmentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+          <EnvironmentOutlined
+            style={{ marginRight: 8, color: COLORS.terracotta }}
+          />
           {getAddress(record)}, д. {getHouseNumber(record)}
         </a>
       ),
@@ -424,15 +397,21 @@ export const HousingTable: React.FC = () => {
       title: "Тип дома",
       key: "building_type",
       width: 120,
-      render: (_: any, record: any) =>
-        record["Тип здания"] || record["Тип объекта"] || "—",
+      render: (_: any, record: any) => (
+        <span style={{ color: COLORS.textSecondary }}>
+          {record["Тип здания"] || record["Тип объекта"] || "—"}
+        </span>
+      ),
     },
     {
       title: "Год постройки",
       key: "year",
       width: 100,
-      render: (_: any, record: any) =>
-        record["Год ввода"] || record["Год постройки"] || "—",
+      render: (_: any, record: any) => (
+        <span style={{ color: COLORS.textPrimary }}>
+          {record["Год ввода"] || record["Год постройки"] || "—"}
+        </span>
+      ),
     },
     {
       title: "Этажность",
@@ -440,14 +419,22 @@ export const HousingTable: React.FC = () => {
       width: 80,
       render: (_: any, record: any) => {
         const floors = record["Количество этажей"] || record["Этажность"];
-        return floors ? `${floors} эт.` : "—";
+        return (
+          <span style={{ color: COLORS.textPrimary }}>
+            {floors ? `${floors} эт.` : "—"}
+          </span>
+        );
       },
     },
     {
       title: "Квартиры",
       key: "apartments",
       width: 80,
-      render: (_: any, record: any) => record["квартир всего"] || "—",
+      render: (_: any, record: any) => (
+        <span style={{ color: COLORS.textPrimary }}>
+          {record["квартир всего"] || "—"}
+        </span>
+      ),
     },
     {
       title: "Общая площадь",
@@ -455,7 +442,11 @@ export const HousingTable: React.FC = () => {
       width: 120,
       render: (_: any, record: any) => {
         const area = record["Площадь общая"] || record["Площадь"];
-        return area ? `${Number(area).toLocaleString()} м²` : "—";
+        return (
+          <span style={{ color: COLORS.textPrimary }}>
+            {area ? `${Number(area).toLocaleString()} м²` : "—"}
+          </span>
+        );
       },
     },
     {
@@ -464,20 +455,41 @@ export const HousingTable: React.FC = () => {
       width: 100,
       render: (_: any, record: any) => {
         const cat = record["Вид жилья"] || record["Категория"];
-        return cat ? <Tag>{cat}</Tag> : "—";
+        return cat ? (
+          <Tag
+            style={{
+              background: COLORS.northernIce,
+              color: COLORS.primaryDark,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: RADIUS.xs,
+            }}
+          >
+            {cat}
+          </Tag>
+        ) : (
+          "—"
+        );
       },
     },
     {
       title: "Жителей",
       key: "residents",
       width: 80,
-      render: (_: any, record: any) => getResidentsCount(record) || "—",
+      render: (_: any, record: any) => (
+        <span style={{ color: COLORS.textPrimary }}>
+          {getResidentsCount(record) || "—"}
+        </span>
+      ),
     },
     {
       title: "Собственников",
       key: "owners",
       width: 100,
-      render: (_: any, record: any) => getOwnersCount(record) || "—",
+      render: (_: any, record: any) => (
+        <span style={{ color: COLORS.textPrimary }}>
+          {getOwnersCount(record) || "—"}
+        </span>
+      ),
     },
     {
       title: "Тех. состояние",
@@ -488,20 +500,20 @@ export const HousingTable: React.FC = () => {
         const year = parseInt(
           record["Год ввода"] || record["Год постройки"] || "0",
         );
-        let color = "#52c41a";
+        let color = COLORS.success;
         let text = "хорошее";
 
         if (emergency) {
-          color = "#ff4d4f";
+          color = COLORS.danger;
           text = "аварийное";
         } else if (year >= 2010) {
-          color = "#52c41a";
+          color = COLORS.success;
           text = "хорошее";
         } else if (year >= 1980) {
-          color = "#1890ff";
+          color = COLORS.info;
           text = "удовлетворительное";
         } else if (year >= 1960) {
-          color = "#faad14";
+          color = COLORS.warning;
           text = "требует ремонта";
         } else if (year > 0) {
           color = "#ff7a45";
@@ -519,7 +531,7 @@ export const HousingTable: React.FC = () => {
                 backgroundColor: color,
               }}
             />
-            <span>{text}</span>
+            <span style={{ color: COLORS.textPrimary }}>{text}</span>
           </Space>
         );
       },
@@ -527,7 +539,13 @@ export const HousingTable: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: "0 24px" }}>
+    <div
+      style={{
+        padding: "0 24px",
+        background: COLORS.background,
+        minHeight: "100vh",
+      }}
+    >
       {/* Верхняя панель с кнопками */}
       <Card
         size="small"
@@ -536,23 +554,58 @@ export const HousingTable: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 100,
-          backgroundColor: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          backgroundColor: COLORS.surface,
+          boxShadow: COLORS.shadowSmall,
+          borderRadius: RADIUS.sm,
+          border: `1px solid ${COLORS.borderLight}`,
         }}
       >
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
           <Space>
-            <Tag icon={<HomeOutlined />} color="blue">
+            <Tag
+              icon={<HomeOutlined />}
+              style={{
+                background: COLORS.terracotta,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+              }}
+            >
               Всего: {emergencyStats.total}
             </Tag>
-            <Tag icon={<WarningOutlined />} color="red">
+            <Tag
+              icon={<WarningOutlined />}
+              style={{
+                background: COLORS.danger,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+              }}
+            >
               Аварийных: {emergencyStats.emergency}
             </Tag>
-            <Tag icon={<CheckCircleOutlined />} color="green">
+            <Tag
+              icon={<CheckCircleOutlined />}
+              style={{
+                background: COLORS.success,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+              }}
+            >
               Не аварийных: {emergencyStats.notEmergency}
             </Tag>
             {filteredData.length !== allData.length && (
-              <Tag color="orange">Отфильтровано: {filteredData.length}</Tag>
+              <Tag
+                style={{
+                  background: COLORS.warning,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.full,
+                }}
+              >
+                Отфильтровано: {filteredData.length}
+              </Tag>
             )}
           </Space>
 
@@ -571,19 +624,6 @@ export const HousingTable: React.FC = () => {
                 onClick={() => setFilterVisible(true)}
               />
             </Tooltip>
-            <Radio.Group
-              value={groupBy}
-              onChange={(e) => {
-                setGroupBy(e.target.value);
-                setPage(1);
-              }}
-              buttonStyle="solid"
-              size="small"
-            >
-              <Radio.Button value="none">Без группировки</Radio.Button>
-              <Radio.Button value="housingType">По виду жилья</Radio.Button>
-              <Radio.Button value="buildingType">По типу здания</Radio.Button>
-            </Radio.Group>
             <ExportButton
               data={exportData.length > 0 ? exportData : filteredData}
               title="Жилой фонд"
@@ -606,8 +646,8 @@ export const HousingTable: React.FC = () => {
           buildingType ||
           emergencyFilter !== undefined ||
           searchAddress) && (
-          <Space wrap style={{ marginTop: 8 }}>
-            <span style={{ color: "#8c8c8c", fontSize: 13 }}>
+          <Space wrap style={{ marginTop: 12 }}>
+            <span style={{ color: COLORS.textMuted, fontSize: 13 }}>
               Активные фильтры:
             </span>
             {searchAddress && (
@@ -617,7 +657,12 @@ export const HousingTable: React.FC = () => {
                   setSearchAddress("");
                   applyFilters(allData);
                 }}
-                color="blue"
+                style={{
+                  background: COLORS.northernBlue,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
               >
                 🔍 {searchAddress}
               </Tag>
@@ -626,7 +671,12 @@ export const HousingTable: React.FC = () => {
               <Tag
                 closable
                 onClose={() => setHousingType(undefined)}
-                color="blue"
+                style={{
+                  background: COLORS.terracotta,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
               >
                 🏠 {housingType}
               </Tag>
@@ -635,7 +685,12 @@ export const HousingTable: React.FC = () => {
               <Tag
                 closable
                 onClose={() => setBuildingType(undefined)}
-                color="purple"
+                style={{
+                  background: COLORS.primary,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
               >
                 🏢 {buildingType}
               </Tag>
@@ -644,7 +699,12 @@ export const HousingTable: React.FC = () => {
               <Tag
                 closable
                 onClose={() => setEmergencyFilter(undefined)}
-                color={emergencyFilter ? "red" : "green"}
+                style={{
+                  background: emergencyFilter ? COLORS.danger : COLORS.success,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
               >
                 {emergencyFilter ? "⚠️ Аварийный" : "✅ Не аварийный"}
               </Tag>
@@ -660,22 +720,31 @@ export const HousingTable: React.FC = () => {
         width={400}
         open={filterVisible}
         onClose={() => setFilterVisible(false)}
+        styles={{ body: { padding: 0 } }} // Убираем паддинг у тела дровера, чтобы управлять отступами сами
       >
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{ width: "100%", padding: "0 24px 24px 24px" }} // Добавили отступы: Слева/Справа 24px, Снизу 24px
+        >
           <Input
             placeholder="Поиск по адресу"
             value={searchAddress}
             onChange={(e) => setSearchAddress(e.target.value)}
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: COLORS.textSecondary }} />}
             size="large"
             allowClear
+            style={{
+              borderRadius: RADIUS.sm,
+              width: THEME.sizes.filterDrawerInputWidth,
+            }}
           />
 
           <Select
             placeholder="Вид жилья"
             value={housingType}
             onChange={setHousingType}
-            style={{ width: "100%" }}
+            style={{ width: THEME.sizes.filterDrawerInputWidth }}
             size="large"
             allowClear
           >
@@ -690,7 +759,7 @@ export const HousingTable: React.FC = () => {
             placeholder="Тип здания"
             value={buildingType}
             onChange={setBuildingType}
-            style={{ width: "100%" }}
+            style={{ width: THEME.sizes.filterDrawerInputWidth }}
             size="large"
             allowClear
           >
@@ -705,7 +774,7 @@ export const HousingTable: React.FC = () => {
             placeholder="Аварийность"
             value={emergencyFilter}
             onChange={setEmergencyFilter}
-            style={{ width: "100%" }}
+            style={{ width: THEME.sizes.filterDrawerInputWidth }}
             size="large"
             allowClear
           >
@@ -713,7 +782,7 @@ export const HousingTable: React.FC = () => {
             <Option value={false}>✅ Не аварийный</Option>
           </Select>
 
-          <Space style={{ width: "100%" }}>
+          <Space style={{ width: THEME.sizes.filterDrawerInputWidth }}>
             <Button
               type="primary"
               icon={<SearchOutlined />}
@@ -722,6 +791,13 @@ export const HousingTable: React.FC = () => {
                 setFilterVisible(false);
               }}
               block
+              style={{
+                background: COLORS.terracotta,
+                borderColor: COLORS.terracotta,
+                borderRadius: RADIUS.md,
+                height: 44,
+                fontWeight: 600,
+              }}
             >
               Применить фильтры
             </Button>
@@ -732,6 +808,7 @@ export const HousingTable: React.FC = () => {
                 setFilterVisible(false);
               }}
               block
+              style={{ borderRadius: RADIUS.md, height: 44 }}
             >
               Сбросить
             </Button>
@@ -745,118 +822,47 @@ export const HousingTable: React.FC = () => {
       >
         {displayData.length > 0 ? (
           <>
-            {groupBy !== "none" ? (
-              <Collapse
-                defaultActiveKey={Object.keys(
-                  displayData.reduce(
-                    (acc: any, item: any) => {
-                      if (!item.isGroupHeader) {
-                        const key =
-                          groupBy === "housingType"
-                            ? item["Категория"] ||
-                              item["Вид жилья"] ||
-                              "Не указано"
-                            : item["Тип здания"] ||
-                              item["Тип объекта"] ||
-                              "Не указано";
-                        acc[key] = true;
-                      }
-                      return acc;
-                    },
-                    {} as Record<string, boolean>,
-                  ),
-                )}
-                style={{ backgroundColor: "#fff" }}
-              >
-                {(() => {
-                  const groups: Record<string, HousingItem[]> = {};
-                  displayData.forEach((item: any) => {
-                    if (!item.isGroupHeader) {
-                      const key =
-                        groupBy === "housingType"
-                          ? item["Категория"] ||
-                            item["Вид жилья"] ||
-                            "Не указано"
-                          : item["Тип здания"] ||
-                            item["Тип объекта"] ||
-                            "Не указано";
-                      if (!groups[key]) groups[key] = [];
-                      groups[key].push(item);
-                    }
-                  });
-                  return Object.keys(groups)
-                    .sort((a, b) => a.localeCompare(b, "ru"))
-                    .map((groupName) => (
-                      <Collapse.Panel
-                        key={groupName}
-                        header={
-                          <Space size="large">
-                            <span style={{ fontWeight: 600, fontSize: 16 }}>
-                              {groupBy === "housingType" ? "🏠" : "🏢"}{" "}
-                              {groupName}
-                            </span>
-                            <Tag color="blue">
-                              {groups[groupName].length} объектов
-                            </Tag>
-                          </Space>
-                        }
-                      >
-                        <Row gutter={[16, 16]}>
-                          {groups[groupName].map((item) => (
-                            <HousingCard
-                              key={item._id}
-                              item={item}
-                              onShowDetails={showDetails}
-                              getAddress={getAddress}
-                              getHouseNumber={getHouseNumber}
-                              getResidentsCount={getResidentsCount}
-                              getOwnersCount={getOwnersCount}
-                              formatDate={formatDate}
-                            />
-                          ))}
-                        </Row>
-                      </Collapse.Panel>
-                    ));
-                })()}
-              </Collapse>
-            ) : (
-              <Card
-                styles={{ body: { padding: 0 } }}
-                style={{ borderRadius: 12, overflow: "hidden" }}
-              >
-                <Table
-                  columns={columns}
-                  dataSource={displayData}
-                  rowKey="_id"
-                  pagination={{
-                    current: page,
-                    pageSize,
-                    total: filteredData.length,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (t) => `Всего ${t} объектов`,
-                    pageSizeOptions: ["12", "24", "48", "96"],
-                    onChange: (p, ps) => {
-                      setPage(p);
-                      setPageSize(ps || 24);
-                    },
-                  }}
-                  size="middle"
-                  rowClassName={(_, index) =>
-                    index % 2 === 0 ? "row-light" : "row-dark"
-                  }
-                  onRow={(record) => ({
-                    style: { cursor: "pointer" },
-                    onClick: () => showDetails(record._id),
-                  })}
-                />
-              </Card>
-            )}
+            <Card
+              styles={{ body: { padding: 0 } }}
+              style={{
+                borderRadius: RADIUS.lg,
+                overflow: "hidden",
+                border: `1px solid ${COLORS.borderLight}`,
+                boxShadow: COLORS.shadowSmall,
+              }}
+            >
+              <Table
+                columns={columns}
+                dataSource={displayData}
+                rowKey="_id"
+                pagination={{
+                  current: page,
+                  pageSize,
+                  total: filteredData.length,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (t) => `Всего ${t} объектов`,
+                  pageSizeOptions: ["12", "24", "48", "96"],
+                  onChange: (p, ps) => {
+                    setPage(p);
+                    setPageSize(ps || 24);
+                  },
+                }}
+                size="middle"
+                rowClassName={(_, index) =>
+                  index % 2 === 0 ? "row-light" : "row-dark"
+                }
+                onRow={(record) => ({
+                  style: { cursor: "pointer" },
+                  onClick: () => showDetails(record._id),
+                })}
+              />
+            </Card>
             <div
               style={{
                 textAlign: "center",
                 marginTop: 16,
-                color: "#8c8c8c",
+                color: COLORS.textMuted,
                 fontSize: 12,
               }}
             >

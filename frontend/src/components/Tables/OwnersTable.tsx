@@ -9,10 +9,9 @@ import {
   Table,
   Spin,
   Empty,
-  Row,
-  Col,
   Tooltip,
   Drawer,
+  Pagination,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,12 +23,18 @@ import {
   ArrowLeftOutlined,
   PercentageOutlined,
   FilterOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { ownersApi, OwnerItem } from "../../services/api";
 import { OwnerDrawer } from "../Drawers/OwnerDrawer";
 import { GerbSpinner } from "../GerbSpinner";
 import { ExportButton } from "../ExportButton";
+import { THEME } from "../../styles/theme";
+
+// Константы для удобства
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 export const OwnersTable: React.FC = () => {
   const navigate = useNavigate();
@@ -45,19 +50,17 @@ export const OwnersTable: React.FC = () => {
   const [pageSize, setPageSize] = useState(20);
 
   const [searchText, setSearchText] = useState(urlAddress || "");
-  const [searchVisible, setSearchVisible] = useState(false); // ← Панель поиска
+  const [searchVisible, setSearchVisible] = useState(false);
   const [exportData, setExportData] = useState<any[]>([]);
 
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
 
+  // ✅ ВСЕ ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ
   const getAddress = (record: any): string => {
-    // 1. Новое поле из БД (добавлено на бэкенде)
     if (record.address_display && record.address_display !== "Без адреса") {
       return record.address_display;
     }
-
-    // 2. Из исходного JSON поля (если address_display не заполнено)
     const addr = record["Почтовый адрес объекта"];
     if (Array.isArray(addr) && addr.length > 0) {
       return addr[0].display_value || "Без адреса";
@@ -65,18 +68,26 @@ export const OwnersTable: React.FC = () => {
     if (addr && typeof addr === "object") {
       return addr.display_value || "Без адреса";
     }
-
     return "Без адреса";
   };
 
   const getHouseNumber = (record: any): string => {
-    // 1. Новое поле из БД
     if (record.house_number) return record.house_number;
-
-    // 2. Из исходного поля
     const num = record["№ дома"] || record["Номер дома"];
     if (Array.isArray(num)) return String(num[0] || "—");
     return String(num || "—");
+  };
+
+  const getOwnershipColor = (type: string) => {
+    if (!type) return COLORS.textMuted;
+    const t = type.toLowerCase();
+    // Муниципальная -> Северное небо (синий)
+    if (t.includes("муниц")) return COLORS.northernBlue;
+    // Частная -> Северное сияние (зеленый)
+    if (t.includes("частн") || t.includes("приват"))
+      return COLORS.northernAurora;
+    // По умолчанию -> Терракота
+    return COLORS.terracotta;
   };
 
   const loadAllData = async () => {
@@ -85,7 +96,6 @@ export const OwnersTable: React.FC = () => {
       let allOwners: OwnerItem[] = [];
       let pageNum = 1;
       let hasMore = true;
-
       const searchQuery = urlAddress || searchText || undefined;
 
       while (hasMore) {
@@ -94,9 +104,6 @@ export const OwnersTable: React.FC = () => {
           page_size: 500,
           search: searchQuery,
         });
-
-        console.log("API response total:", response.total); // ← ЛОГ
-
         if (response.data && response.data.length > 0) {
           allOwners = [...allOwners, ...response.data];
           pageNum++;
@@ -106,7 +113,6 @@ export const OwnersTable: React.FC = () => {
         }
       }
 
-      // Фильтрация по дому
       let filtered = allOwners;
       if (urlAddress && urlHouse) {
         filtered = allOwners.filter((owner: any) => {
@@ -122,27 +128,23 @@ export const OwnersTable: React.FC = () => {
       setAllData(filtered);
       setTotal(filtered.length);
     } catch (error) {
+      console.error("Error loading data", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // ПОИСК + URL — сбрасываем страницу и загружаем
   useEffect(() => {
     setPage(1);
     loadAllData();
   }, [searchText, urlAddress, urlHouse]);
 
-  // ПАГИНАЦИЯ — только загружаем, не сбрасываем страницу
   useEffect(() => {
     loadAllData();
   }, [page, pageSize]);
 
   const handleSearch = () => {
-    if (searchText && !urlAddress) {
-      // Сбрасываем URL параметры при ручном поиске
-      navigate("/owners");
-    }
+    if (searchText && !urlAddress) navigate("/owners");
     setPage(1);
     loadAllData();
   };
@@ -169,9 +171,9 @@ export const OwnersTable: React.FC = () => {
             e.stopPropagation();
             showOwnerDetails(record._id);
           }}
-          style={{ fontWeight: 500 }}
+          style={{ fontWeight: 500, color: COLORS.textPrimary }}
         >
-          <UserOutlined style={{ marginRight: 8, color: "#1890ff" }} />
+          <UserOutlined style={{ marginRight: 8, color: COLORS.terracotta }} />
           {record["ФИО"] || record["Наименование"] || "—"}
         </a>
       ),
@@ -182,8 +184,8 @@ export const OwnersTable: React.FC = () => {
       width: 280,
       render: (_: any, record: any) => (
         <Space>
-          <EnvironmentOutlined style={{ color: "#1890ff" }} />
-          <span>
+          <EnvironmentOutlined style={{ color: COLORS.northernBlue }} />
+          <span style={{ color: COLORS.textPrimary }}>
             {getAddress(record)}
             {getHouseNumber(record) !== "—" && `, д. ${getHouseNumber(record)}`}
           </span>
@@ -195,7 +197,23 @@ export const OwnersTable: React.FC = () => {
       dataIndex: "Вид собственности",
       key: "ownership_type",
       width: 160,
-      render: (text: string) => (text ? <Tag color="purple">{text}</Tag> : "—"),
+      render: (text: string) =>
+        text ? (
+          <Tag
+            style={{
+              background: getOwnershipColor(text),
+              color: "#fff",
+              border: "none",
+              borderRadius: RADIUS.xs,
+              fontSize: 12,
+              padding: "2px 10px",
+            }}
+          >
+            {text.length > 30 ? text.substring(0, 30) + "..." : text}
+          </Tag>
+        ) : (
+          "—"
+        ),
     },
     {
       title: "Доля",
@@ -205,8 +223,10 @@ export const OwnersTable: React.FC = () => {
       render: (text: string) =>
         text ? (
           <Space>
-            <PercentageOutlined />
-            {text}
+            <PercentageOutlined style={{ color: COLORS.terracotta }} />
+            <span style={{ fontWeight: 600, color: COLORS.textPrimary }}>
+              {text}
+            </span>
           </Space>
         ) : (
           "—"
@@ -218,8 +238,11 @@ export const OwnersTable: React.FC = () => {
       width: 100,
       render: (_: any, record: any) => {
         const apt = record["№ квартиры"] || record["Квартира"];
-        if (Array.isArray(apt)) return String(apt[0] || "—");
-        return String(apt || "—");
+        return (
+          <span style={{ color: COLORS.terracottaDark, fontWeight: 500 }}>
+            {Array.isArray(apt) ? String(apt[0] || "—") : String(apt || "—")}
+          </span>
+        );
       },
     },
     {
@@ -230,8 +253,8 @@ export const OwnersTable: React.FC = () => {
       render: (text: string) =>
         text ? (
           <Space>
-            <PhoneOutlined />
-            {text}
+            <PhoneOutlined style={{ color: COLORS.textSecondary }} />
+            <span style={{ color: COLORS.textPrimary }}>{text}</span>
           </Space>
         ) : (
           "—"
@@ -242,7 +265,9 @@ export const OwnersTable: React.FC = () => {
       dataIndex: "ИНН",
       key: "inn",
       width: 130,
-      render: (text: string) => text || "—",
+      render: (text: string) => (
+        <span style={{ color: COLORS.textSecondary }}>{text || "—"}</span>
+      ),
     },
   ];
 
@@ -252,19 +277,23 @@ export const OwnersTable: React.FC = () => {
   }, [allData, page, pageSize]);
 
   return (
-    <div style={{ padding: "0 24px" }}>
+    <div
+      style={{
+        padding: "0 24px",
+        background: COLORS.background,
+        minHeight: "100vh",
+      }}
+    >
       {urlAddress && (
         <Button
           icon={<ArrowLeftOutlined />}
           onClick={() => {
             navigate("/owners");
             setSearchText("");
-            setPage(1); // Сбрасываем страницу
-            setTimeout(() => {
-              loadAllData();
-            }, 100);
+            setPage(1);
+            setTimeout(() => loadAllData(), 100);
           }}
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 16, borderRadius: RADIUS.sm }}
         >
           Назад ко всем собственникам
           {searchParams.get("house") && ` (дом ${searchParams.get("house")})`}
@@ -274,19 +303,40 @@ export const OwnersTable: React.FC = () => {
       {/* Панель фильтров */}
       <Card
         size="small"
+        className="top-panel"
         style={{
-          marginBottom: 16,
+          marginBottom: 24,
           position: "sticky",
           top: 0,
           zIndex: 100,
-          backgroundColor: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          background: COLORS.surface,
+          border: `1px solid ${COLORS.borderLight}`,
+          boxShadow: COLORS.shadowSmall,
+          borderRadius: RADIUS.sm,
         }}
       >
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <Space>
-            <Tag icon={<TeamOutlined />} color="green">
-              Собственников: {total}
+          <Space size="large">
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: COLORS.textPrimary,
+              }}
+            >
+              🏠 Собственники
+            </span>
+            <Tag
+              style={{
+                background: COLORS.terracotta,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+                padding: "2px 12px",
+                fontSize: 13,
+              }}
+            >
+              {total}
             </Tag>
             {searchText && (
               <Tag
@@ -295,18 +345,26 @@ export const OwnersTable: React.FC = () => {
                   setSearchText("");
                   loadAllData();
                 }}
+                style={{
+                  background: COLORS.background,
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: RADIUS.sm,
+                  color: COLORS.textSecondary,
+                }}
               >
                 🔍 {searchText}
               </Tag>
             )}
           </Space>
-
           <Space>
             <Tooltip title="Поиск">
               <Button
                 icon={<FilterOutlined />}
-                type={searchText ? "primary" : "default"}
+                type="text"
                 onClick={() => setSearchVisible(true)}
+                style={{
+                  color: searchText ? COLORS.terracotta : COLORS.textSecondary,
+                }}
               />
             </Tooltip>
             <ExportButton
@@ -330,14 +388,23 @@ export const OwnersTable: React.FC = () => {
         </Space>
       </Card>
 
+      {/* Drawer поиска */}
       <Drawer
         title="🔍 Поиск собственников"
         placement="right"
         width={400}
         open={searchVisible}
         onClose={() => setSearchVisible(false)}
+        style={{
+          width: "100%",
+          padding: "0 24px 24px 24px",
+        }}
       >
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{ width: THEME.sizes.filterDrawerInputWidth }}
+        >
           <Input
             placeholder="Поиск по ФИО, адресу, телефону..."
             value={searchText}
@@ -346,11 +413,15 @@ export const OwnersTable: React.FC = () => {
               loadAllData();
               setSearchVisible(false);
             }}
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: COLORS.textSecondary }} />}
             size="large"
             allowClear
+            style={{
+              borderRadius: RADIUS.sm,
+              width: THEME.sizes.filterDrawerInputWidth,
+            }}
           />
-          <Space>
+          <Space style={{ width: THEME.sizes.filterDrawerInputWidth }}>
             <Button
               type="primary"
               icon={<SearchOutlined />}
@@ -359,6 +430,14 @@ export const OwnersTable: React.FC = () => {
                 setSearchVisible(false);
               }}
               block
+              size="large"
+              style={{
+                background: COLORS.terracotta,
+                borderColor: COLORS.terracotta,
+                borderRadius: RADIUS.md,
+                height: 44,
+                fontWeight: 600,
+              }}
             >
               Найти
             </Button>
@@ -370,6 +449,8 @@ export const OwnersTable: React.FC = () => {
                 setSearchVisible(false);
               }}
               block
+              size="large"
+              style={{ borderRadius: RADIUS.md, height: 44 }}
             >
               Сбросить
             </Button>
@@ -380,10 +461,15 @@ export const OwnersTable: React.FC = () => {
       {/* Таблица */}
       <Card
         styles={{ body: { padding: 0 } }}
-        style={{ borderRadius: 12, overflow: "hidden" }}
+        style={{
+          borderRadius: RADIUS.lg,
+          overflow: "hidden",
+          border: `1px solid ${COLORS.borderLight}`,
+          boxShadow: COLORS.shadowSmall,
+        }}
       >
         <Spin
-          indicator={<GerbSpinner size={120} animation="pulse" />}
+          indicator={<GerbSpinner size={50} animation="spin3d" />}
           spinning={loading}
         >
           {paginatedData.length > 0 ? (
@@ -424,7 +510,7 @@ export const OwnersTable: React.FC = () => {
         style={{
           textAlign: "center",
           marginTop: 16,
-          color: "#8c8c8c",
+          color: COLORS.textMuted,
           fontSize: 12,
         }}
       >

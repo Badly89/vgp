@@ -5,34 +5,28 @@ import {
   Button,
   Space,
   Tag,
-  Modal,
-  Descriptions,
   Row,
   Col,
   Avatar,
   Pagination,
   Spin,
   Empty,
-  Tooltip,
-  Collapse,
 } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
   BankOutlined,
-  PhoneOutlined,
-  HomeOutlined,
   EnvironmentOutlined,
-  MailOutlined,
-  GlobalOutlined,
-  IdcardOutlined,
   TeamOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
 } from "@ant-design/icons";
-import { OrganizationModal } from "../Modals/OrganizationModal";
+
 import { organizationsApi, OrganizationItem } from "../../services/api";
 import { GerbSpinner } from "../GerbSpinner";
+import { THEME } from "../../styles/theme";
+import { OrganizationDrawer } from "../Drawers/OrganizationDrawer";
+
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 export const OrganizationsTable: React.FC = () => {
   const [allData, setAllData] = useState<OrganizationItem[]>([]);
@@ -52,7 +46,7 @@ export const OrganizationsTable: React.FC = () => {
 
   // Модальное окно
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   // Форматирование значения
   const formatValue = (value: any): string => {
@@ -165,7 +159,6 @@ export const OrganizationsTable: React.FC = () => {
   };
 
   // Загрузка данных
-  // Загрузка данных
   const loadData = async () => {
     setLoading(true);
     try {
@@ -255,11 +248,17 @@ export const OrganizationsTable: React.FC = () => {
 
   const showDetails = (org: OrganizationItem) => {
     setSelectedOrg(org);
-    setModalVisible(true);
+    setDrawerVisible(true);
   };
 
   return (
-    <>
+    <div
+      style={{
+        padding: "0 24px",
+        background: COLORS.background,
+        minHeight: "100vh",
+      }}
+    >
       {/* Панель поиска и фильтров */}
       <Card
         style={{
@@ -267,8 +266,10 @@ export const OrganizationsTable: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 100,
-          backgroundColor: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          backgroundColor: COLORS.surface,
+          boxShadow: COLORS.shadowSmall,
+          borderRadius: RADIUS.sm,
+          border: `1px solid ${COLORS.borderLight}`,
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
@@ -282,23 +283,43 @@ export const OrganizationsTable: React.FC = () => {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 onPressEnter={handleSearch}
-                prefix={<SearchOutlined />}
-                style={{ width: 320 }}
+                prefix={
+                  <SearchOutlined style={{ color: COLORS.textSecondary }} />
+                }
+                style={{ width: 320, borderRadius: RADIUS.sm }}
                 allowClear
               />
               <Button
                 type="primary"
                 onClick={handleSearch}
                 icon={<SearchOutlined />}
+                style={{
+                  background: COLORS.terracotta,
+                  borderColor: COLORS.terracotta,
+                  borderRadius: RADIUS.sm,
+                }}
               >
                 Поиск
               </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
+              <Button
+                onClick={handleReset}
+                icon={<ReloadOutlined />}
+                style={{ borderRadius: RADIUS.sm }}
+              >
                 Сбросить
               </Button>
             </Space>
 
-            <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
+            <Tag
+              style={{
+                background: COLORS.terracotta,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+                fontSize: 14,
+                padding: "4px 16px",
+              }}
+            >
               {orgType
                 ? `Найдено: ${data.length}`
                 : `Всего организаций: ${total}`}
@@ -308,21 +329,36 @@ export const OrganizationsTable: React.FC = () => {
           {/* Типы организаций */}
           {orgTypes.length > 0 && (
             <Space wrap style={{ marginTop: 8 }}>
-              <span style={{ color: "#8c8c8c" }}>Фильтр по типу:</span>
+              <span style={{ color: COLORS.textMuted, fontSize: 13 }}>
+                Фильтр по типу:
+              </span>
               <Tag
-                color={!orgType ? "blue" : "default"}
-                style={{ cursor: "pointer" }}
+                style={{
+                  background: !orgType ? COLORS.terracotta : "transparent",
+                  color: !orgType ? "#fff" : COLORS.textPrimary,
+                  border: !orgType ? "none" : `1px solid ${COLORS.border}`,
+                  borderRadius: RADIUS.sm,
+                  cursor: "pointer",
+                }}
                 onClick={() => setOrgType(undefined)}
               >
                 Все
               </Tag>
               {orgTypes.map((type) => {
-                // Считаем количество организаций этого типа (если есть allData)
                 return (
                   <Tag
                     key={type}
-                    color={orgType === type ? "blue" : "default"}
-                    style={{ cursor: "pointer" }}
+                    style={{
+                      background:
+                        orgType === type ? COLORS.terracotta : "transparent",
+                      color: orgType === type ? "#fff" : COLORS.textPrimary,
+                      border:
+                        orgType === type
+                          ? "none"
+                          : `1px solid ${COLORS.border}`,
+                      borderRadius: RADIUS.sm,
+                      cursor: "pointer",
+                    }}
                     onClick={() =>
                       setOrgType(orgType === type ? undefined : type)
                     }
@@ -357,7 +393,7 @@ export const OrganizationsTable: React.FC = () => {
                 const employeesCount = getEmployeesCount(item);
 
                 return (
-                  <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item._id}>
+                  <Col xs={24} sm={12} md={10} lg={8} xl={8} key={item._id}>
                     <Card
                       hoverable
                       onClick={() => showDetails(item)}
@@ -366,12 +402,26 @@ export const OrganizationsTable: React.FC = () => {
                         cursor: "pointer",
                         display: "flex",
                         flexDirection: "column",
+                        borderRadius: RADIUS.lg,
+                        border: `1px solid ${COLORS.borderLight}`,
+                        boxShadow: COLORS.shadowSmall,
+                        transition: `all ${THEME.animation.fast}`,
                       }}
                       bodyStyle={{
                         padding: "16px",
                         flex: 1,
                         display: "flex",
                         flexDirection: "column",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = COLORS.terracotta;
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = COLORS.shadowMedium;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = COLORS.borderLight;
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = COLORS.shadowSmall;
                       }}
                     >
                       <div
@@ -385,7 +435,7 @@ export const OrganizationsTable: React.FC = () => {
                           size={56}
                           icon={<BankOutlined />}
                           style={{
-                            backgroundColor: "#1890ff",
+                            backgroundColor: COLORS.primaryLight,
                             marginRight: 12,
                             flexShrink: 0,
                           }}
@@ -397,16 +447,38 @@ export const OrganizationsTable: React.FC = () => {
                               fontSize: 16,
                               marginBottom: 4,
                               wordBreak: "break-word",
+                              color: COLORS.textPrimary,
                             }}
                           >
                             {name}
                           </div>
                           <Space size={4} wrap>
                             {orgTypeValue && (
-                              <Tag color="purple">{orgTypeValue}</Tag>
+                              <Tag
+                                style={{
+                                  margin: 0,
+                                  background: "rgba(92, 61, 46, 0.1)",
+                                  color: COLORS.primary,
+                                  border: "none",
+                                  borderRadius: RADIUS.xs,
+                                  fontSize: 11,
+                                }}
+                              >
+                                {orgTypeValue}
+                              </Tag>
                             )}
                             {employeesCount && (
-                              <Tag color="blue" icon={<TeamOutlined />}>
+                              <Tag
+                                icon={<TeamOutlined />}
+                                style={{
+                                  margin: 0,
+                                  background: "rgba(123, 158, 175, 0.1)",
+                                  color: COLORS.northernBlue,
+                                  border: "none",
+                                  borderRadius: RADIUS.xs,
+                                  fontSize: 11,
+                                }}
+                              >
                                 {employeesCount} сотр.
                               </Tag>
                             )}
@@ -418,9 +490,9 @@ export const OrganizationsTable: React.FC = () => {
                       {address !== "Без адреса" && (
                         <div
                           style={{
-                            backgroundColor: "#f5f5f5",
+                            backgroundColor: COLORS.background,
                             padding: "12px",
-                            borderRadius: 8,
+                            borderRadius: RADIUS.sm,
                             marginBottom: 8,
                           }}
                         >
@@ -428,12 +500,12 @@ export const OrganizationsTable: React.FC = () => {
                             style={{
                               display: "flex",
                               alignItems: "flex-start",
-                              marginBottom: 4,
+                              marginBottom: 0,
                             }}
                           >
                             <EnvironmentOutlined
                               style={{
-                                color: "#1890ff",
+                                color: COLORS.terracotta,
                                 marginRight: 8,
                                 marginTop: 3,
                               }}
@@ -443,6 +515,7 @@ export const OrganizationsTable: React.FC = () => {
                                 fontWeight: 500,
                                 fontSize: 13,
                                 wordBreak: "break-word",
+                                color: COLORS.textPrimary,
                               }}
                             >
                               {address}
@@ -452,22 +525,6 @@ export const OrganizationsTable: React.FC = () => {
                       )}
 
                       <div style={{ flex: 1 }} />
-
-                      {/* Связанные жители (если есть) */}
-                      {item["Список граждан Вынгапур"] && (
-                        <div
-                          style={{
-                            fontSize: 13,
-                            color: "#595959",
-                            marginTop: 8,
-                          }}
-                        >
-                          <TeamOutlined style={{ marginRight: 8 }} />
-                          {Array.isArray(item["Список граждан Вынгапур"])
-                            ? `${item["Список граждан Вынгапур"].length} сотрудников`
-                            : "Есть сотрудники"}
-                        </div>
-                      )}
                     </Card>
                   </Col>
                 );
@@ -495,15 +552,14 @@ export const OrganizationsTable: React.FC = () => {
         )}
       </Spin>
 
-      {/* Модальное окно с детальной информацией */}
-      <OrganizationModal
-        open={modalVisible}
-        onClose={() => setModalVisible(false)}
+      <OrganizationDrawer
+        visible={drawerVisible}
         organization={selectedOrg}
+        onClose={() => setDrawerVisible(false)}
         getName={getName}
         getAddress={getAddress}
         formatValue={formatValue}
       />
-    </>
+    </div>
   );
 };

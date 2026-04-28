@@ -1,249 +1,165 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===== НОВАЯ ЦВЕТОВАЯ ПАЛИТРА ===== */
+:root {
+  --primary: #1a1a2e;
+  --primary-light: #16213e;
+  --accent: #8b5cf6;
+  --accent-light: #a78bfa;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #3b82f6;
+  --municipal: #7c3aed;
+  --private: #059669;
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --gradient-header: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --gradient-card: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* ===== КАРТОЧКИ ГРУПП ===== */
+.owner-group-card {
+  margin-bottom: 16px;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--surface) !important;
 }
 
-/* Стили для таблицы */
-.ant-table-cell {
-  white-space: nowrap;
+.owner-group-card .ant-card-body {
+  padding: 16px 20px !important;
 }
 
-.ant-table-cell a {
-  color: #1890ff;
-  text-decoration: none;
-}
-
-.ant-table-cell a:hover {
-  text-decoration: underline;
-}
-
-/* Анимация загрузки */
-.ant-table-row:hover {
-  background-color: #f5f5f5 !important;
-}
-
-/* Стили для модального окна */
-.ant-modal-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-/* Стили для тегов */
-.ant-tag {
-  margin-right: 0;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .ant-table {
-    font-size: 12px;
-  }
-}
-
-
-/* Стили для групповых заголовков */
-.group-header-row {
-  background-color: #f0f7ff !important;
-  font-weight: bold;
-}
-
-.group-header-row:hover {
-  background-color: #e6f2ff !important;
-}
-
-.group-header-row td {
-  border-bottom: 2px solid #1890ff !important;
-  padding: 12px 16px !important;
-}
-
-/* Красивое отображение длинных тегов */
-.ant-tag {
-  max-width: 100%;
-  white-space: normal !important;
-  word-break: break-word;
-  line-height: 1.5;
-}
-
-/* Для описаний в модальном окне */
-.ant-descriptions-item-content {
-  word-break: break-word;
-}
-
-/* Красивый блок с адресом */
-.address-block {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  padding: 16px;
-  border-radius: 12px;
-  border-left: 4px solid #1890ff;
-}
-
-/* Стили для аккордеона в модальном окне */
-.ant-collapse {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.ant-collapse-item {
-  border-bottom: 1px solid #f0f0f0 !important;
-}
-
-.ant-collapse-header {
-  align-items: center !important;
-  padding: 12px 16px !important;
-  font-size: 15px !important;
-}
-
-.ant-collapse-content-box {
-  padding: 8px 16px 16px !important;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-/* Скроллбар для списков */
-.ant-collapse-content-box::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ant-collapse-content-box::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 3px;
-}
-
-.ant-collapse-content-box::-webkit-scrollbar-thumb {
-  background: #bfbfbf;
-  border-radius: 3px;
-}
-
-.ant-collapse-content-box::-webkit-scrollbar-thumb:hover {
-  background: #8c8c8c;
-}
-
-/* Заголовки групп */
-.group-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  margin: 16px 0 8px 0;
-}
-
-.group-header h3 {
-  color: white;
-  margin: 0;
-}
-
-/* Аккордеон группировки */
-.ant-collapse {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.ant-collapse-item {
-  border-bottom: 1px solid #f0f0f0 !important;
-  margin-bottom: 8px;
-}
-
-.ant-collapse-header {
-  align-items: center !important;
-  padding: 14px 20px !important;
-  font-size: 16px !important;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  border-radius: 8px !important;
-}
-
-.ant-collapse-header:hover {
-  background: linear-gradient(135deg, #e8ecf1 0%, #dce1e8 100%);
-}
-
-.ant-collapse-content-box {
-  padding: 20px !important;
-  background-color: #fafafa;
-}
-
-/* Карточки внутри аккордеона */
-.ant-collapse-content-box .ant-card {
-  transition: all 0.3s ease;
-}
-
-.ant-collapse-content-box .ant-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Анимация для аварийного статуса */
-.emergency-tag {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-/* Аккордеон группировки жителей */
-.ant-collapse {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.ant-collapse-item {
-  border-bottom: 1px solid #f0f0f0 !important;
-  margin-bottom: 8px;
-}
-
-.ant-collapse-header {
-  align-items: center !important;
-  padding: 14px 20px !important;
-  font-size: 16px !important;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  border-radius: 8px !important;
-}
-
-.ant-collapse-header:hover {
-  background: linear-gradient(135deg, #e8ecf1 0%, #dce1e8 100%);
-}
-
-.ant-collapse-content-box {
-  padding: 20px !important;
-  background-color: #fafafa;
-}
-
-.ant-tag.ant-tag-orange {
-  opacity: 0.85;
-}
-
-.ant-tag.ant-tag-orange:hover {
-  opacity: 1;
-}
-
-
-.ant-layout-sider .ant-layout-sider-children {
+/* ===== ЗАГОЛОВОК ГРУППЫ ===== */
+.owner-group-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
 }
 
-.ant-layout-sider-collapsed .ant-menu-item {
-  padding-inline: calc(50% - 16px) !important;
+/* ===== ЭЛЕМЕНТ СПИСКА СОБСТВЕННИКОВ ===== */
+.owner-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.ant-layout-sider-collapsed .ant-menu-item .anticon {
-  font-size: 18px;
+.owner-list-item:hover {
+  background: #e8e8e8;
+}
+
+/* ===== АВАТАР В СПИСКЕ ===== */
+.owner-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ===== ТЕГ ТИПА СОБСТВЕННОСТИ ===== */
+.tag-municipal {
+  background: var(--municipal) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 11px;
+  padding: 0 6px;
+}
+
+.tag-private {
+  background: var(--private) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 11px;
+  padding: 0 6px;
+}
+
+/* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
+.top-panel {
+  margin-bottom: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+}
+
+/* ===== ТАБЛИЦА (если используется) ===== */
+.ant-table {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ant-table-thead>tr>th {
+  background: var(--bg) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+
+/* ===== КНОПКИ ===== */
+.btn-primary-gradient {
+  background: var(--accent) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600;
+}
+
+.btn-outline {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* ===== DRAWER ===== */
+.ant-drawer-body {
+  padding: 0 !important;
+}
+
+.ant-drawer-header {
+  border-bottom: 1px solid var(--border);
+}
+
+/* ===== ТЕГИ ФИЛЬТРОВ ===== */
+.filter-tag {
+  background: var(--bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+/* ===== ПАГИНАЦИЯ ===== */
+.ant-pagination-item-active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
 }

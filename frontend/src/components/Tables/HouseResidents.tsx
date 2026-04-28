@@ -13,22 +13,23 @@ import {
   Collapse,
   Breadcrumb,
   List,
-  Descriptions,
 } from "antd";
 import {
   ArrowLeftOutlined,
   HomeOutlined,
   UserOutlined,
-  PhoneOutlined,
-  CalendarOutlined,
   ManOutlined,
   WomanOutlined,
-  IdcardOutlined,
-  BankOutlined,
   TeamOutlined,
+  BankOutlined,
 } from "@ant-design/icons";
-import { ResidentModal } from "../Modals/ResidentModal";
+import { ResidentDrawer } from "../Drawers/ResidentDrawer";
 import { residentsApi, ResidentItem } from "../../services/api";
+import { THEME } from "../../styles/theme";
+
+// Константы темы для удобства
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 const { Panel } = Collapse;
 
@@ -50,7 +51,7 @@ export const HouseResidents: React.FC = () => {
   const [selectedResident, setSelectedResident] = useState<ResidentItem | null>(
     null,
   );
-  const [modalVisible, setModalVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const formatDate = (dateStr: string): string => {
     if (!dateStr) return "—";
@@ -103,6 +104,24 @@ export const HouseResidents: React.FC = () => {
     let value = record["Аварийный дом"];
     if (Array.isArray(value)) value = value[0];
     return value === false || value === "Нет" || value === "нет";
+  };
+
+  // Получение информации о муниципальном жилье для квартиры
+  const getMunicipalInfo = (apartment: string): any => {
+    const owner = findOwner(apartment);
+    if (!owner) return null;
+
+    const hasMunicipal =
+      owner["Муниципальный ж/ф, кол-во квартир"] > 0 ||
+      owner["Муниципальный ж/ф, S квартир(м2)"] > 0;
+
+    if (!hasMunicipal) return null;
+
+    return {
+      municipalCount: owner["Муниципальный ж/ф, кол-во квартир"] || 0,
+      municipalArea: owner["Муниципальный ж/ф, S квартир(м2)"] || 0,
+      isMunicipal: owner["Муниципальный ж/ф, кол-во квартир"] === 1,
+    };
   };
 
   // Поиск собственника по адресу и квартире
@@ -268,18 +287,21 @@ export const HouseResidents: React.FC = () => {
 
   const showDetails = (resident: ResidentItem) => {
     setSelectedResident(resident);
-    setModalVisible(true);
+    setDrawerVisible(true);
   };
 
   return (
     <div style={{ padding: "0 0 24px 0" }}>
       <Breadcrumb style={{ marginBottom: 16 }}>
         <Breadcrumb.Item>
-          <a onClick={() => navigate("/residents?group=house")}>
+          <a
+            onClick={() => navigate("/residents?group=house")}
+            style={{ color: COLORS.textSecondary }}
+          >
             <HomeOutlined /> Жители
           </a>
         </Breadcrumb.Item>
-        <Breadcrumb.Item>
+        <Breadcrumb.Item style={{ color: COLORS.textPrimary }}>
           {decodedAddress}, дом №{decodedHouseNumber}
         </Breadcrumb.Item>
       </Breadcrumb>
@@ -290,8 +312,10 @@ export const HouseResidents: React.FC = () => {
           position: "sticky",
           top: 0,
           zIndex: 100,
-          backgroundColor: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          backgroundColor: COLORS.surface,
+          boxShadow: COLORS.shadowSmall,
+          borderRadius: RADIUS.sm,
+          border: `1px solid ${COLORS.borderLight}`,
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
@@ -299,42 +323,94 @@ export const HouseResidents: React.FC = () => {
             <Button
               icon={<ArrowLeftOutlined />}
               onClick={() => navigate("/residents?group=house")}
+              style={{ borderRadius: RADIUS.sm }}
             >
               Назад к списку домов
             </Button>
           </Space>
           <Space size="large">
-            <HomeOutlined style={{ fontSize: 24, color: "#1890ff" }} />
-            <span style={{ fontSize: 18, fontWeight: 600 }}>
+            <HomeOutlined style={{ fontSize: 24, color: COLORS.terracotta }} />
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: COLORS.textPrimary,
+              }}
+            >
               {decodedAddress}, дом №{decodedHouseNumber}
             </span>
           </Space>
           <Row gutter={16}>
             <Col>
-              <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
+              <Tag
+                style={{
+                  fontSize: 14,
+                  padding: "4px 16px",
+                  borderRadius: RADIUS.full,
+                  background: COLORS.northernBlue,
+                  color: "#fff",
+                  border: "none",
+                }}
+              >
                 👥 Всего жителей: {totalResidents}
               </Tag>
             </Col>
             <Col>
-              <Tag color="green" style={{ fontSize: 14, padding: "4px 16px" }}>
+              <Tag
+                style={{
+                  fontSize: 14,
+                  padding: "4px 16px",
+                  borderRadius: RADIUS.full,
+                  background: COLORS.success,
+                  color: "#fff",
+                  border: "none",
+                }}
+              >
                 👤 Взрослых: {adultsCount}
               </Tag>
             </Col>
             <Col>
-              <Tag color="orange" style={{ fontSize: 14, padding: "4px 16px" }}>
+              <Tag
+                style={{
+                  fontSize: 14,
+                  padding: "4px 16px",
+                  borderRadius: RADIUS.full,
+                  background: COLORS.warning,
+                  color: "#fff",
+                  border: "none",
+                }}
+              >
                 🧒 Детей: {childrenCount}
               </Tag>
             </Col>
             <Col>
-              <Tag color="purple" style={{ fontSize: 14, padding: "4px 16px" }}>
+              <Tag
+                style={{
+                  fontSize: 14,
+                  padding: "4px 16px",
+                  borderRadius: RADIUS.full,
+                  background: COLORS.primaryLight,
+                  color: "#fff",
+                  border: "none",
+                }}
+              >
                 🚪 Квартир: {sortedKeys.length}
               </Tag>
             </Col>
             {emergencyStatus && (
               <Col>
                 <Tag
-                  color={emergencyStatus === "Аварийный" ? "red" : "green"}
-                  style={{ fontSize: 14, padding: "4px 16px" }}
+                  style={{
+                    fontSize: 14,
+                    padding: "4px 16px",
+                    borderRadius: RADIUS.full,
+                    background:
+                      emergencyStatus === "Аварийный"
+                        ? COLORS.danger
+                        : COLORS.success,
+                    color: "#fff",
+                    border: "none",
+                  }}
                 >
                   {emergencyStatus === "Аварийный" ? "⚠️" : "✅"}{" "}
                   {emergencyStatus}
@@ -349,7 +425,8 @@ export const HouseResidents: React.FC = () => {
         {residents.length > 0 ? (
           <Collapse
             defaultActiveKey={sortedKeys}
-            style={{ backgroundColor: "#fff", width: "100%" }}
+            style={{ backgroundColor: "transparent", width: "100%" }}
+            bordered={false}
           >
             {sortedKeys.map((apartmentKey) => {
               const apartmentItems = groups[apartmentKey];
@@ -364,27 +441,186 @@ export const HouseResidents: React.FC = () => {
                   key={apartmentKey}
                   header={
                     <Space size="large">
-                      <span style={{ fontWeight: 600, fontSize: 16 }}>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 16,
+                          color: COLORS.textPrimary,
+                        }}
+                      >
                         🚪{" "}
                         {apartmentKey === "Без квартиры"
                           ? "Без квартиры"
                           : `Квартира ${apartmentKey}`}
                       </span>
                       <Space size="small">
-                        <Tag color="blue">{apartmentItems.length} чел.</Tag>
-                        <Tag color="green">{apartmentAdults} взр.</Tag>
-                        <Tag color="orange">{apartmentChildren} дет.</Tag>
+                        <Tag
+                          style={{
+                            background: COLORS.northernIce,
+                            color: COLORS.primaryDark,
+                            border: `1px solid ${COLORS.border}`,
+                          }}
+                        >
+                          {apartmentItems.length} чел.
+                        </Tag>
+                        <Tag
+                          style={{
+                            background: COLORS.northernIce,
+                            color: COLORS.primaryDark,
+                            border: `1px solid ${COLORS.border}`,
+                          }}
+                        >
+                          {apartmentAdults} взр.
+                        </Tag>
+                        <Tag
+                          style={{
+                            background: COLORS.northernIce,
+                            color: COLORS.primaryDark,
+                            border: `1px solid ${COLORS.border}`,
+                          }}
+                        >
+                          {apartmentChildren} дет.
+                        </Tag>
                       </Space>
                       {owner && (
-                        <Tag icon={<TeamOutlined />} color="purple">
+                        <Tag
+                          icon={<TeamOutlined />}
+                          style={{
+                            background: COLORS.terracotta,
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: RADIUS.xs,
+                          }}
+                        >
                           {owner["ФИО"] ||
                             owner["Наименование"] ||
                             "Собственник"}
                         </Tag>
                       )}
+                      {/* ✅ ИНДИКАТОР МУНИЦИПАЛЬНОГО ЖИЛЬЯ */}
+                      {(() => {
+                        const municipalInfo = getMunicipalInfo(apartmentKey);
+                        return municipalInfo?.isMunicipal ? (
+                          <Tag
+                            style={{
+                              background: COLORS.municipal,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: RADIUS.xs,
+                            }}
+                          >
+                            🏛️ Муниципальное
+                          </Tag>
+                        ) : null;
+                      })()}
                     </Space>
                   }
+                  style={{
+                    backgroundColor: COLORS.surface,
+                    borderRadius: RADIUS.md,
+                    marginBottom: 12,
+                    border: `1px solid ${COLORS.borderLight}`,
+                  }}
                 >
+                  {/* ✅ ДОБАВИТЬ КОНТРАСТНУЮ КАРТОЧКУ ЗДЕСЬ */}
+                  {getMunicipalInfo(apartmentKey)?.isMunicipal && (
+                    <Card
+                      size="small"
+                      style={{
+                        margin: "0 0 16px 0",
+                        background:
+                          "linear-gradient(135deg, rgba(123, 158, 175, 0.15) 0%, rgba(123, 158, 175, 0.05) 100%)",
+                        border: `2px solid ${COLORS.northernBlue}`,
+                        borderRadius: RADIUS.sm,
+                        boxShadow: "0 2px 12px rgba(123, 158, 175, 0.2)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Space>
+                          <div
+                            style={{
+                              width: 42,
+                              height: 42,
+                              borderRadius: RADIUS.xs,
+                              background: COLORS.northernBlue,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              boxShadow: "0 2px 8px rgba(123, 158, 175, 0.4)",
+                            }}
+                          >
+                            <BankOutlined
+                              style={{ color: "#fff", fontSize: 20 }}
+                            />
+                          </div>
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                color: COLORS.primaryDark,
+                                fontSize: 15,
+                              }}
+                            >
+                              Муниципальное жилье
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: COLORS.textSecondary,
+                                marginTop: 2,
+                              }}
+                            >
+                              {owner["ФИО"] || owner["Наименование"] || "—"}
+                            </div>
+                          </div>
+                        </Space>
+                        <Space size="large">
+                          <div style={{ textAlign: "center" }}>
+                            <div
+                              style={{
+                                fontSize: 24,
+                                fontWeight: 800,
+                                color: COLORS.northernBlue,
+                                lineHeight: 1,
+                              }}
+                            >
+                              {getMunicipalInfo(apartmentKey)?.municipalArea}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: COLORS.textSecondary,
+                                marginTop: 2,
+                              }}
+                            >
+                              м²
+                            </div>
+                          </div>
+                          <Tag
+                            style={{
+                              background: COLORS.northernBlue,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: RADIUS.full,
+                              fontSize: 14,
+                              padding: "6px 16px",
+                              fontWeight: 700,
+                              boxShadow: "0 2px 8px rgba(123, 158, 175, 0.3)",
+                            }}
+                          >
+                            🏛️ {getMunicipalInfo(apartmentKey)?.municipalCount}{" "}
+                            кв.
+                          </Tag>
+                        </Space>
+                      </div>
+                    </Card>
+                  )}
                   {/* Список жителей */}
                   <List
                     dataSource={apartmentItems}
@@ -415,8 +651,27 @@ export const HouseResidents: React.FC = () => {
                               width: "100%",
                               height: "100%",
                               cursor: "pointer",
+                              borderRadius: RADIUS.md,
+                              border: `1px solid ${COLORS.borderLight}`,
+                              boxShadow: COLORS.shadowSmall,
+                              transition: `all ${THEME.animation.fast}`,
                             }}
                             bodyStyle={{ padding: "16px" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor =
+                                COLORS.terracotta;
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                COLORS.shadowMedium;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor =
+                                COLORS.borderLight;
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow =
+                                COLORS.shadowSmall;
+                            }}
                           >
                             <div
                               style={{
@@ -439,10 +694,10 @@ export const HouseResidents: React.FC = () => {
                                 style={{
                                   backgroundColor:
                                     genderValue === "Женский"
-                                      ? "#eb2f96"
+                                      ? COLORS.terracotta // Терракота для женщин
                                       : genderValue === "Мужской"
-                                        ? "#1890ff"
-                                        : "#8c8c8c",
+                                        ? COLORS.northernBlue // Северное небо для мужчин
+                                        : COLORS.textMuted,
                                   marginRight: 12,
                                   flexShrink: 0,
                                 }}
@@ -454,6 +709,7 @@ export const HouseResidents: React.FC = () => {
                                     fontSize: 15,
                                     marginBottom: 4,
                                     wordBreak: "break-word",
+                                    color: COLORS.textPrimary,
                                   }}
                                 >
                                   {fullName}
@@ -461,42 +717,88 @@ export const HouseResidents: React.FC = () => {
                                 <Space size={4} wrap>
                                   {genderValue && (
                                     <Tag
-                                      color={
-                                        genderValue === "Женский"
-                                          ? "pink"
-                                          : "blue"
-                                      }
+                                      style={{
+                                        margin: 0,
+                                        background:
+                                          genderValue === "Женский"
+                                            ? "rgba(198, 123, 92, 0.1)"
+                                            : "rgba(123, 158, 175, 0.1)",
+                                        color:
+                                          genderValue === "Женский"
+                                            ? COLORS.terracotta
+                                            : COLORS.northernBlue,
+                                        border: "none",
+                                        borderRadius: RADIUS.xs,
+                                        fontSize: 11,
+                                      }}
                                     >
                                       {genderValue}
                                     </Tag>
                                   )}
                                   {isChildValue && (
-                                    <Tag color="orange">Ребенок</Tag>
+                                    <Tag
+                                      style={{
+                                        margin: 0,
+                                        background: "rgba(212, 149, 106, 0.1)",
+                                        color: COLORS.warning,
+                                        border: "none",
+                                        borderRadius: RADIUS.xs,
+                                        fontSize: 11,
+                                      }}
+                                    >
+                                      Ребенок
+                                    </Tag>
                                   )}
                                   {categoryValue && (
-                                    <Tag color="cyan">{categoryValue}</Tag>
+                                    <Tag
+                                      style={{
+                                        margin: 0,
+                                        background: "rgba(91, 140, 90, 0.1)",
+                                        color: COLORS.northernAurora,
+                                        border: "none",
+                                        borderRadius: RADIUS.xs,
+                                        fontSize: 11,
+                                      }}
+                                    >
+                                      {categoryValue}
+                                    </Tag>
                                   )}
                                   {relation && (
-                                    <Tag color="purple">{relation}</Tag>
+                                    <Tag
+                                      style={{
+                                        margin: 0,
+                                        background: "rgba(92, 61, 46, 0.1)",
+                                        color: COLORS.primary,
+                                        border: "none",
+                                        borderRadius: RADIUS.xs,
+                                        fontSize: 11,
+                                      }}
+                                    >
+                                      {relation}
+                                    </Tag>
                                   )}
 
                                   {/* ✅ Бейдж собственника */}
                                   {owner &&
                                     (owner["ФИО"] || owner["Наименование"]) ===
                                       fullName && (
-                                      <Tag color="gold" icon={<TeamOutlined />}>
+                                      <Tag
+                                        icon={<TeamOutlined />}
+                                        style={{
+                                          margin: 0,
+                                          background: COLORS.terracotta,
+                                          color: "#fff",
+                                          border: "none",
+                                          borderRadius: RADIUS.xs,
+                                          fontSize: 11,
+                                        }}
+                                      >
                                         Собственник
                                       </Tag>
                                     )}
                                 </Space>
                               </div>
                             </div>
-                            {phone && (
-                              <div style={{ fontSize: 13, color: "#595959" }}>
-                                <PhoneOutlined style={{ marginRight: 8 }} />
-                                {phone}
-                              </div>
-                            )}
                           </Card>
                         </List.Item>
                       );
@@ -516,16 +818,14 @@ export const HouseResidents: React.FC = () => {
         )}
       </Spin>
 
-      <ResidentModal
-        open={modalVisible}
-        onClose={() => setModalVisible(false)}
+      <ResidentDrawer
+        visible={drawerVisible}
         resident={selectedResident}
+        onClose={() => setDrawerVisible(false)}
         getFullName={getFullName}
         getAddress={getAddress}
         getGender={getGender}
         formatDate={formatDate}
-        isEmergency={isEmergency}
-        isNotEmergency={isNotEmergency}
       />
     </div>
   );

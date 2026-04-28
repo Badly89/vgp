@@ -1,0 +1,479 @@
+/* ===== ШРИФТЫ ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --primary: #5C3D2E;
+  --primary-dark: #3B2417;
+  --primary-light: #8B6F5E;
+  --terracotta: #C67B5C;
+  --terracotta-light: #E8B4A2;
+  --terracotta-dark: #A0523D;
+  --northern-blue: #7B9EAF;
+  --northern-ice: #C8D9E3;
+  --northern-aurora: #5B8C5A;
+  --northern-snow: #F5F0EB;
+  --success: #5B8C5A;
+  --warning: #D4956A;
+  --danger: #B8443A;
+  --info: #7B9EAF;
+  --bg: #F5F0EB;
+  --surface: #FFFAF5;
+  --surface-hover: #F0E8DE;
+  --border: #E0D5C8;
+  --border-light: #EDE4D8;
+  --text-primary: #3B2417;
+  --text-secondary: #7B6E63;
+  --text-muted: #A89888;
+  --text-inverse: #FFFAF5;
+  --gradient-header: linear-gradient(135deg, #3B2417 0%, #5C3D2E 100%);
+  --gradient-card: linear-gradient(135deg, #C67B5C 0%, #E8B4A2 100%);
+  --shadow-sm: 0 2px 4px rgba(92, 61, 46, 0.06);
+  --shadow-md: 0 4px 12px rgba(92, 61, 46, 0.08);
+  --shadow-lg: 0 8px 24px rgba(92, 61, 46, 0.12);
+  --shadow-glow: 0 0 20px rgba(198, 123, 92, 0.2);
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --anim-fast: 0.15s ease;
+  --anim-normal: 0.25s ease;
+  --anim-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --anim-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
+* {
+  font-family: var(--font-body);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ===== ANT DESIGN ПЕРЕОПРЕДЕЛЕНИЯ ===== */
+
+/* Кнопки */
+.ant-btn {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all var(--anim-fast);
+}
+
+.ant-btn-primary {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+}
+
+.ant-btn-primary:hover {
+  background: var(--terracotta-dark) !important;
+  border-color: var(--terracotta-dark) !important;
+}
+
+.ant-btn-default:hover {
+  border-color: var(--terracotta) !important;
+  color: var(--terracotta) !important;
+}
+
+/* Инпуты */
+.ant-input {
+  border-radius: var(--radius-sm);
+  border-color: var(--border);
+  font-family: var(--font-body);
+}
+
+.ant-input:focus,
+.ant-input-focused {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 2px rgba(198, 123, 92, 0.1);
+}
+
+.ant-input:hover {
+  border-color: var(--terracotta-light);
+}
+
+/* Селекты */
+.ant-select-selector {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--border) !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: var(--terracotta) !important;
+  box-shadow: 0 0 0 2px rgba(198, 123, 92, 0.1) !important;
+}
+
+/* Карточки */
+.ant-card {
+  border-radius: var(--radius-md);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.ant-card-bordered {
+  border: 1px solid var(--border-light);
+}
+
+/* Таблица */
+.ant-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+.ant-table-thead>tr>th {
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border);
+  font-family: var(--font-heading);
+}
+
+.row-light {
+  background: var(--surface);
+}
+
+.row-dark {
+  background: #FFF8F3;
+}
+
+.ant-table-tbody>tr:hover>td {
+  background: var(--surface-hover) !important;
+  transition: background var(--anim-fast);
+}
+
+/* Теги */
+.ant-tag {
+  border-radius: var(--radius-xs);
+  font-family: var(--font-body);
+  font-weight: 500;
+}
+
+.ant-tag-checkable-checked {
+  background: var(--terracotta) !important;
+  color: #fff !important;
+}
+
+/* Пагинация */
+.ant-pagination-item-active {
+  background: var(--terracotta) !important;
+  border-color: var(--terracotta) !important;
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+/* Модальные окна */
+.ant-modal-content {
+  border-radius: var(--radius-lg);
+}
+
+.ant-modal-header {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Drawer */
+.ant-drawer-content {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.ant-drawer-header {
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Меню */
+.ant-menu-item-selected {
+  background: var(--surface-hover) !important;
+  color: var(--terracotta) !important;
+}
+
+.ant-menu-item:hover {
+  color: var(--terracotta) !important;
+}
+
+/* Спиннер */
+.ant-spin-dot-item {
+  background: var(--terracotta) !important;
+}
+
+/* Switch */
+.ant-switch-checked {
+  background: var(--terracotta) !important;
+}
+
+/* Radio */
+.ant-radio-checked .ant-radio-inner {
+  border-color: var(--terracotta) !important;
+  background: var(--terracotta) !important;
+}
+
+/* Tabs */
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--terracotta) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--terracotta) !important;
+}
+
+/* Progress */
+.ant-progress-bg {
+  background: var(--terracotta) !important;
+}
+
+/* ===== АНИМАЦИИ ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--anim-normal) forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn var(--anim-normal) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--anim-spring) forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Staggered animation for lists */
+.stagger-item {
+  opacity: 0;
+  animation: fadeIn var(--anim-normal) forwards;
+}
+
+.stagger-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.stagger-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.stagger-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.stagger-item:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.stagger-item:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.stagger-item:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+.stagger-item:nth-child(7) {
+  animation-delay: 0.35s;
+}
+
+.stagger-item:nth-child(8) {
+  animation-delay: 0.4s;
+}
+
+.stagger-item:nth-child(9) {
+  animation-delay: 0.45s;
+}
+
+.stagger-item:nth-child(10) {
+  animation-delay: 0.5s;
+}
+
+/* ===== КОМПОНЕНТЫ ===== */
+
+/* Верхняя панель */
+.top-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-sm);
+}
+
+/* Карточка группы */
+.owner-group-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  background: var(--surface);
+  transition: all var(--anim-fast);
+}
+
+.owner-group-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Элемент списка */
+.owner-list-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--anim-fast);
+}
+
+.owner-list-item:hover {
+  background: var(--surface-hover);
+  transform: translateX(4px);
+}
+
+/* Аватар */
+.owner-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Теги типов */
+.tag-municipal {
+  background: var(--northern-blue) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-xs);
+}
+
+.tag-private {
+  background: var(--northern-aurora) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-xs);
+}
+
+/* Кнопка действия */
+.btn-primary {
+  background: var(--terracotta) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600;
+  transition: all var(--anim-fast);
+}
+
+.btn-primary:hover {
+  background: var(--terracotta-dark) !important;
+  box-shadow: var(--shadow-glow);
+}
+
+/* ===== ЖИТЕЛИ ===== */
+.resident-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--anim-fast);
+  background: var(--surface);
+}
+
+.resident-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ===== СТАТУСЫ ДОМОВ ===== */
+.status-good {
+  color: var(--northern-aurora);
+}
+
+.status-ok {
+  color: var(--northern-blue);
+}
+
+.status-needs-repair {
+  color: var(--warning);
+}
+
+.status-bad {
+  color: var(--danger);
+}
