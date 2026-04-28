@@ -14,15 +14,38 @@ interface GerbSpinnerProps {
   size?: number;
   animation?: AnimationType;
   text?: string;
+  fullScreen?: boolean; // ← ДОБАВИТЬ
 }
 
 export const GerbSpinner: React.FC<GerbSpinnerProps> = ({
   size = 64,
   animation = "pulse",
   text,
+  fullScreen = false,
 }) => {
+  const centerStyle: React.CSSProperties = fullScreen
+    ? {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(255, 250, 245, 0.8)", // полупрозрачный фон темы
+        zIndex: 9999,
+        flexDirection: "column",
+      }
+    : {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "200px",
+        flexDirection: "column",
+      };
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={centerStyle}>
       <div
         className={`gerb-${animation}`}
         style={{ width: size, height: size, margin: "0 auto" }}

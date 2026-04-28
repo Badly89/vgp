@@ -817,7 +817,7 @@ export const HousingTable: React.FC = () => {
       </Drawer>
 
       <Spin
-        indicator={<GerbSpinner size={200} animation="spin3d" />}
+        indicator={<GerbSpinner size={100} animation="spin3d" fullScreen />}
         spinning={loading}
       >
         {displayData.length > 0 ? (
