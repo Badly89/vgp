@@ -656,7 +656,7 @@ export const ResidentsTable: React.FC = () => {
       </Card>
 
       <Spin
-        indicator={<GerbSpinner size={50} animation="spin3d" />}
+        indicator={<GerbSpinner size={100} animation="spin3d" fullScreen />}
         spinning={loading}
       >
         {groupBy === "house" ? (

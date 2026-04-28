@@ -374,7 +374,7 @@ export const OrganizationsTable: React.FC = () => {
 
       {/* Карточки организаций */}
       <Spin
-        indicator={<GerbSpinner size={100} animation="spin3d" />}
+        indicator={<GerbSpinner size={100} animation="spin3d" fullScreen />}
         spinning={loading}
       >
         {data.length > 0 ? (

@@ -4,9 +4,16 @@ from app.services.data_service import data_service
 from app.core.database import mariadb_client
 from app.core.config import get_settings
 import asyncio
-from datetime import datetime, time
+from datetime import datetime, time, timedelta  # ← добавить timedelta
 import json
 import os
+
+from pydantic import BaseModel
+
+class ScheduleConfig(BaseModel):
+    enabled: Optional[bool] = None
+    time: Optional[str] = None
+    tables: Optional[List[str]] = None
 
 
 router = APIRouter(prefix="/api/sync", tags=["sync"])
@@ -96,27 +103,22 @@ async def get_schedule():
 
 
 @router.post("/schedule")
-async def set_schedule(
-    enabled: bool = None,
-    time: str = None,
-    tables: List[str] = None
-):
+async def set_schedule(config: ScheduleConfig):
     """Настроить расписание автосинхронизации"""
-    if enabled is not None:
-        sync_schedule["enabled"] = enabled
-    if time:
-        # Проверяем формат времени
+    if config.enabled is not None:
+        sync_schedule["enabled"] = config.enabled
+    if config.time:
         try:
-            datetime.strptime(time, "%H:%M")
-            sync_schedule["time"] = time
-        except:
+            datetime.strptime(config.time, "%H:%M")
+            sync_schedule["time"] = config.time
+        except ValueError:
             raise HTTPException(status_code=400, detail="Неверный формат времени. Используйте ЧЧ:ММ")
-    if tables:
+    if config.tables is not None:
         valid_tables = ["residents", "owners", "housing", "organizations"]
-        for t in tables:
+        for t in config.tables:
             if t not in valid_tables:
                 raise HTTPException(status_code=400, detail=f"Неизвестная таблица: {t}")
-        sync_schedule["tables"] = tables
+        sync_schedule["tables"] = config.tables
     
     save_schedule()
     return sync_schedule

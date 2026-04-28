@@ -8,3 +8,7 @@ __pycache__/
 /frontend/package-lock.json
 /frontend/dist/
 /frontend/public/
+*.yml
+.env
+/frontend/Dockerfile
+/backend/Dockerfile
