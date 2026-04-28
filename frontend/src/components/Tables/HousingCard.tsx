@@ -9,6 +9,10 @@ import {
   WarningOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
+import { THEME } from "../../styles/theme";
+
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
 
 interface HousingCardProps {
   item: any;
@@ -49,15 +53,15 @@ export const HousingCard: React.FC<HousingCardProps> = ({
     emergencyField === "да" ||
     emergencyField === "true";
 
-  // Цвет аватарки в зависимости от типа жилья
+  // Цвет аватарки в зависимости от типа жилья (Терракота и Северные акценты)
   const avatarColor =
     housingTypeValue === "МКД"
-      ? "#1890ff"
+      ? COLORS.terracotta
       : housingTypeValue === "ИЖС"
-        ? "#52c41a"
+        ? COLORS.northernAurora
         : housingTypeValue === "Блокированный"
-          ? "#faad14"
-          : "#1890ff";
+          ? COLORS.warning
+          : COLORS.primaryLight;
 
   const avatarIcon =
     housingTypeValue === "МКД"
@@ -73,8 +77,25 @@ export const HousingCard: React.FC<HousingCardProps> = ({
       <Card
         hoverable
         onClick={() => onShowDetails(item._id)}
-        style={{ height: "100%", cursor: "pointer" }}
+        style={{
+          height: "100%",
+          cursor: "pointer",
+          borderRadius: RADIUS.lg,
+          border: `1px solid ${COLORS.borderLight}`,
+          boxShadow: COLORS.shadowSmall,
+          transition: `all ${THEME.animation.fast}`,
+        }}
         bodyStyle={{ padding: "16px" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = COLORS.terracotta;
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = COLORS.shadowMedium;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = COLORS.borderLight;
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = COLORS.shadowSmall;
+        }}
       >
         {/* Заголовок с адресом */}
         <div
@@ -88,6 +109,7 @@ export const HousingCard: React.FC<HousingCardProps> = ({
             size={48}
             style={{
               backgroundColor: avatarColor,
+              color: "#fff",
               marginRight: 12,
               flexShrink: 0,
               fontSize: 24,
@@ -102,6 +124,7 @@ export const HousingCard: React.FC<HousingCardProps> = ({
                 fontSize: 15,
                 marginBottom: 4,
                 wordBreak: "break-word",
+                color: COLORS.textPrimary,
               }}
             >
               {address}
@@ -109,25 +132,55 @@ export const HousingCard: React.FC<HousingCardProps> = ({
             <Space size={4} wrap>
               {housingTypeValue && (
                 <Tag
-                  color={
-                    housingTypeValue === "МКД"
-                      ? "blue"
-                      : housingTypeValue === "ИЖС"
-                        ? "green"
-                        : "gold"
-                  }
+                  style={{
+                    margin: 0,
+                    background:
+                      housingTypeValue === "МКД"
+                        ? "rgba(198, 123, 92, 0.1)"
+                        : housingTypeValue === "ИЖС"
+                          ? "rgba(91, 140, 90, 0.1)"
+                          : "rgba(212, 149, 106, 0.1)",
+                    color:
+                      housingTypeValue === "МКД"
+                        ? COLORS.terracotta
+                        : housingTypeValue === "ИЖС"
+                          ? COLORS.northernAurora
+                          : COLORS.warning,
+                    border: "none",
+                    borderRadius: RADIUS.xs,
+                    fontSize: 11,
+                  }}
                 >
                   {housingTypeValue}
                 </Tag>
               )}
               {buildingTypeValue && (
-                <Tag color="purple" icon={<HomeOutlined />}>
+                <Tag
+                  icon={<HomeOutlined />}
+                  style={{
+                    margin: 0,
+                    background: "rgba(92, 61, 46, 0.1)",
+                    color: COLORS.primary,
+                    border: "none",
+                    borderRadius: RADIUS.xs,
+                    fontSize: 11,
+                  }}
+                >
                   {buildingTypeValue}
                 </Tag>
               )}
               {/* Статус аварийности */}
               <Tag
-                color={isEmergency ? "red" : "green"}
+                style={{
+                  margin: 0,
+                  background: isEmergency
+                    ? "rgba(184, 68, 58, 0.1)"
+                    : "rgba(91, 140, 90, 0.1)",
+                  color: isEmergency ? COLORS.danger : COLORS.success,
+                  border: "none",
+                  borderRadius: RADIUS.xs,
+                  fontSize: 11,
+                }}
                 icon={
                   isEmergency ? <WarningOutlined /> : <CheckCircleOutlined />
                 }
@@ -141,16 +194,16 @@ export const HousingCard: React.FC<HousingCardProps> = ({
         {/* Характеристики */}
         <div
           style={{
-            backgroundColor: "#f5f5f5",
+            backgroundColor: COLORS.background,
             padding: "12px",
-            borderRadius: 8,
+            borderRadius: RADIUS.sm,
             marginBottom: 8,
           }}
         >
           <Row gutter={[8, 8]}>
             <Col span={12}>
-              <div style={{ fontSize: 12, color: "#8c8c8c" }}>Дом</div>
-              <div style={{ fontWeight: 500 }}>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>Дом</div>
+              <div style={{ fontWeight: 500, color: COLORS.textPrimary }}>
                 {item["Номер дома"]
                   ? `№${item["Номер дома"]}`
                   : houseNumber !== "—"
@@ -160,20 +213,30 @@ export const HousingCard: React.FC<HousingCardProps> = ({
             </Col>
             {area && (
               <Col span={12}>
-                <div style={{ fontSize: 12, color: "#8c8c8c" }}>Площадь</div>
-                <div style={{ fontWeight: 500 }}>{area} м²</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+                  Площадь
+                </div>
+                <div style={{ fontWeight: 500, color: COLORS.textPrimary }}>
+                  {area} м²
+                </div>
               </Col>
             )}
             {floors && (
               <Col span={12}>
-                <div style={{ fontSize: 12, color: "#8c8c8c" }}>Этажей</div>
-                <div style={{ fontWeight: 500 }}>{floors}</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+                  Этажей
+                </div>
+                <div style={{ fontWeight: 500, color: COLORS.textPrimary }}>
+                  {floors}
+                </div>
               </Col>
             )}
             {buildYear && (
               <Col span={12}>
-                <div style={{ fontSize: 12, color: "#8c8c8c" }}>Год</div>
-                <div style={{ fontWeight: 500 }}>{buildYear}</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted }}>Год</div>
+                <div style={{ fontWeight: 500, color: COLORS.textPrimary }}>
+                  {buildYear}
+                </div>
               </Col>
             )}
           </Row>
@@ -182,25 +245,42 @@ export const HousingCard: React.FC<HousingCardProps> = ({
         {/* Счетчики */}
         <Space size="large" style={{ marginTop: 8 }}>
           <span>
-            <TeamOutlined style={{ marginRight: 4, color: "#1890ff" }} />
-            <strong>{ownersCount}</strong> соб.
+            <TeamOutlined
+              style={{ marginRight: 4, color: COLORS.terracotta }}
+            />
+            <strong style={{ color: COLORS.textPrimary }}>{ownersCount}</strong>{" "}
+            соб.
           </span>
           <span>
-            <UserOutlined style={{ marginRight: 4, color: "#52c41a" }} />
-            <strong>{residentsCount}</strong> жит.
+            <UserOutlined
+              style={{ marginRight: 4, color: COLORS.northernAurora }}
+            />
+            <strong style={{ color: COLORS.textPrimary }}>
+              {residentsCount}
+            </strong>{" "}
+            жит.
           </span>
         </Space>
 
         {/* Доп. информация */}
         <Space wrap size={[8, 4]} style={{ marginTop: 8 }}>
           {material && (
-            <span style={{ fontSize: 12, color: "#595959" }}>
+            <span style={{ fontSize: 12, color: COLORS.textSecondary }}>
               🧱 {material}
             </span>
           )}
           {demolitionYear && (
             <Tooltip title="Год планируемого сноса">
-              <Tag color="red" style={{ margin: 0 }}>
+              <Tag
+                style={{
+                  margin: 0,
+                  background: "rgba(184, 68, 58, 0.1)",
+                  color: COLORS.danger,
+                  border: "none",
+                  borderRadius: RADIUS.xs,
+                  fontSize: 11,
+                }}
+              >
                 <CalendarOutlined /> {formatDate(demolitionYear)}
               </Tag>
             </Tooltip>

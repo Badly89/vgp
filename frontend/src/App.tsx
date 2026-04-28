@@ -10,6 +10,7 @@ import { ResidentsTable } from "./components/Tables/ResidentsTable";
 import { OrganizationsTable } from "./components/Tables/OrganizationsTable";
 import { SyncManager } from "./components/SyncManager/SyncManager";
 import { DashboardBuilder } from "./components/Dashboard/DashboardBuilder";
+import { HouseResidents } from "./components/Tables/HouseResidents";
 
 const basename = "";
 
@@ -51,6 +52,14 @@ function App() {
             element={
               <MainLayout>
                 <ResidentsTable />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/residents/house/:address/:houseNumber"
+            element={
+              <MainLayout>
+                <HouseResidents />
               </MainLayout>
             }
           />

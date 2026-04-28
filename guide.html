@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Руководство пользователя | VGP Жилой фонд</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f8fafc;
+        }
+        
+        .manual-container {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 50px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #0f172a;
+            border-left: 5px solid #3b82f6;
+            padding-left: 20px;
+        }
+        
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 25px;
+            color: #334155;
+        }
+        
+        .badge {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .feature-card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 16px;
+        }
+        
+        .tip {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        
+        .print-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="manual-container">
+    <h1>🏢 VGP. Реестр жилого фонда</h1>
+    <div class="subtitle">
+        Микрорайон Вынгапур<br>
+        Руководство пользователя v1.0
+    </div>
+
+    <h2>📌 Основные разделы</h2>
+    <div class="feature-grid">
+        <div class="feature-card"><strong>🏢 Жилой фонд</strong><br>Список домов, фильтры, детали объектов</div>
+        <div class="feature-card"><strong>🏠 Собственники</strong><br>Группировка по адресам, доли, контакты</div>
+        <div class="feature-card"><strong>👥 Жители</strong><br>Карточки жителей, группировка по домам</div>
+        <div class="feature-card"><strong>🏪 Организации</strong><br>Список организаций, поиск по ИНН</div>
+        <div class="feature-card"><strong>📊 Дашборд</strong><br>Конструктор графиков и аналитика</div>
+        <div class="feature-card"><strong>🔄 Синхронизация</strong><br>Обновление данных из DTable</div>
+    </div>
+
+    <h2>🔍 Жилой фонд</h2>
+    <p>На странице отображаются карточки объектов. Для каждого показаны: адрес, категория, площадь, количество жителей и статус аварийности.</p>
+    <h3>Фильтры</h3>
+    <ul>
+        <li><strong>Поиск по адресу</strong> — введите часть названия улицы.</li>
+        <li><strong>Вид жилья</strong> — МКД, ИЖС и др.</li>
+        <li><strong>Тип здания</strong> — кирпичный, панельный, деревянный.</li>
+        <li><strong>Аварийность</strong> — фильтр по статусу.</li>
+    </ul>
+    <div class="tip">
+        💡 <strong>Совет:</strong> Кликните на карточку дома, чтобы увидеть полный список собственников и зарегистрированных жителей.
+    </div>
+
+    <h2>📊 Аналитика и Дашборд</h2>
+    <p>Создавайте собственные графики для визуализации данных:</p>
+    <ol>
+        <li>Нажмите «Добавить график».</li>
+        <li>Выберите тип: Гистограмма, Круговая, Линейная, Область.</li>
+        <li>Выберите таблицу и поле для группировки (например, «Категория»).</li>
+        <li>Нажмите «Сохранить».</li>
+    </ol>
+    <p>Графики можно редактировать, удалять и экспортировать в PNG.</p>
+
+    <h2>🔄 Синхронизация данных</h2>
+    <p>Все данные загружаются из внешней системы DTable. Вы можете управлять обновлением вручную или настроить расписание.</p>
+    <table>
+        <tr><th>Действие</th><th>Описание</th></tr>
+        <tr><td>Полная синхронизация</td><td>Обновить все таблицы (жилье, жители, собственники, организации).</td></tr>
+        <tr><td>Синхронизировать отдельно</td><td>Обновить только выбранный раздел.</td></tr>
+        <tr><td>Расписание</td><td>Настройка автоматического обновления (например, ежедневно в 02:00).</td></tr>
+    </table>
+
+    <h2>❓ Часто задаваемые вопросы</h2>
+    <h3>Как посмотреть всех жителей одного дома?</h3>
+    <p>Перейдите в раздел «Жители», выберите группировку «По домам» и нажмите на нужный адрес.</p>
+    <h3>Почему данные не отображаются?</h3>
+    <p>Проверьте страницу «Синхронизация» и запустите полное обновление данных.</p>
+
+    <div class="footer">
+        <p>Сервер доступа: http://10.87.0.59:8787 | API Docs: /docs</p>
+        <p>© 2024 VGP Housing Registry. Все права защищены.</p>
+    </div>
+</div>
+
+</body>
+</html>

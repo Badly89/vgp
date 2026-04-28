@@ -1,279 +1,327 @@
-import React from "react";
+import { useState, useEffect } from "react";
+import { dashboardApi } from "../services/api";
 import {
   Card,
   Row,
   Col,
   Typography,
-  Button,
   Space,
   Statistic,
   Tag,
-  Divider,
+  Button,
 } from "antd";
 import {
-  HomeOutlined,
+  ApartmentOutlined,
   TeamOutlined,
   UserOutlined,
   ShopOutlined,
   SyncOutlined,
-  DashboardOutlined,
   ArrowRightOutlined,
-  EnvironmentOutlined,
-  PhoneOutlined,
-  CalendarOutlined,
+  ClockCircleOutlined,
+  DashboardOutlined,
+  RiseOutlined,
+  FallOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { THEME } from "../styles/theme";
 
-const { Title, Text, Paragraph } = Typography;
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
+
+const { Title, Text } = Typography;
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [summary, setSummary] = useState({
+    total_housing: 0,
+    total_owners: 0,
+    total_residents: 0,
+    total_organizations: 0,
+  });
+  const [loading, setLoading] = useState(false);
 
-  const sections = [
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    try {
+      const data = await dashboardApi.getSummary();
+      if (data?.summary) {
+        setSummary({
+          total_housing: data.summary.total_housing || 0,
+          total_owners: data.summary.total_owners || 0,
+          total_residents: data.summary.total_residents || 0,
+          total_organizations: data.summary.total_organizations || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки статистики:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Данные для карточек статистики
+  const stats = [
     {
       key: "housing",
       title: "Жилой фонд",
-      description:
-        "Список домов, информация об объектах, аварийность, площадь и другие характеристики",
-      icon: <HomeOutlined style={{ fontSize: 48, color: "#3f8600" }} />,
-      color: "#3f8600",
-      bgColor: "#f6ffed",
-      borderColor: "#b7eb8f",
+      value: summary.total_housing,
+      prefix: <ApartmentOutlined style={{ color: COLORS.terracotta }} />,
+      suffix: (
+        <Text style={{ fontSize: 14, color: COLORS.success }}>
+          <RiseOutlined /> +4
+        </Text>
+      ),
+      color: COLORS.terracotta,
       path: "/housing",
-      stats: { label: "Объектов", value: "277" },
     },
     {
       key: "owners",
-      title: "Собственники жилья",
-      description:
-        "Реестр собственников, доли, контактные данные, группировка по адресам",
-      icon: <TeamOutlined style={{ fontSize: 48, color: "#1890ff" }} />,
-      color: "#1890ff",
-      bgColor: "#e6f7ff",
-      borderColor: "#91caff",
+      title: "Собственники",
+      value: summary.total_owners,
+      prefix: <TeamOutlined style={{ color: COLORS.northernAurora }} />,
+      suffix: (
+        <Text style={{ fontSize: 14, color: COLORS.success }}>
+          <RiseOutlined /> +12
+        </Text>
+      ),
+      color: COLORS.northernAurora,
       path: "/owners",
-      stats: { label: "Собственников", value: "1 640" },
     },
     {
       key: "residents",
-      title: "Жители районов",
-      description:
-        "Список жителей, регистрация, состав семей, демографические данные",
-      icon: <UserOutlined style={{ fontSize: 48, color: "#722ed1" }} />,
-      color: "#722ed1",
-      bgColor: "#f9f0ff",
-      borderColor: "#d3adf7",
+      title: "Жители",
+      value: summary.total_residents,
+      prefix: <UserOutlined style={{ color: COLORS.northernBlue }} />,
+      suffix: (
+        <Text style={{ fontSize: 14, color: COLORS.danger }}>
+          <FallOutlined /> -8
+        </Text>
+      ),
+      color: COLORS.northernBlue,
       path: "/residents",
-      stats: { label: "Жителей", value: "5 002" },
     },
     {
       key: "organizations",
       title: "Организации",
-      description: "Список организаций, контакты, ИНН, виды деятельности",
-      icon: <ShopOutlined style={{ fontSize: 48, color: "#fa8c16" }} />,
-      color: "#fa8c16",
-      bgColor: "#fff7e6",
-      borderColor: "#ffd591",
+      value: summary.total_organizations,
+      prefix: <ShopOutlined style={{ color: COLORS.primary }} />,
+      suffix: (
+        <Text style={{ fontSize: 14, color: COLORS.success }}>
+          <RiseOutlined /> +1
+        </Text>
+      ),
+      color: COLORS.primary,
       path: "/organizations",
-      stats: { label: "Организаций", value: "54" },
-    },
-    {
-      key: "dashboard",
-      title: "Дашборд",
-      description: "Аналитика, графики, статистика по всем разделам",
-      icon: <DashboardOutlined style={{ fontSize: 48, color: "#eb2f96" }} />,
-      color: "#eb2f96",
-      bgColor: "#fff0f6",
-      borderColor: "#ffadd6",
-      path: "/dashboard",
-    },
-    {
-      key: "sync",
-      title: "Синхронизация",
-      description: "Обновление данных из DTable, настройка расписания",
-      icon: <SyncOutlined style={{ fontSize: 48, color: "#13c2c2" }} />,
-      color: "#13c2c2",
-      bgColor: "#e6fffb",
-      borderColor: "#87e8de",
-      path: "/sync",
     },
   ];
 
   return (
-    <div style={{ padding: "24px", minHeight: "100vh", background: "#f5f5f5" }}>
-      {/* Шапка */}
-      <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <Space direction="vertical" size="small">
-          <Title level={1} style={{ margin: 0, fontSize: 48, fontWeight: 700 }}>
-            <span
-              style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              🏢 VGP
-            </span>
-          </Title>
-          <Title
-            level={2}
-            style={{ margin: 0, fontWeight: 400, color: "#666" }}
-          >
+    <div
+      style={{
+        padding: "24px",
+        minHeight: "100vh",
+        background: COLORS.background,
+      }}
+    >
+      {/* Шапка с названием и синхронизацией */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
+        <Space direction="vertical" size={0}>
+          <Title level={3} style={{ margin: 0, color: COLORS.textPrimary }}>
             Реестр жилого фонда
           </Title>
-          <Text style={{ fontSize: 16, color: "#8c8c8c" }}>
-            Микрорайон Вынгапур
+          <Text style={{ color: COLORS.textSecondary, fontSize: 14 }}>
+            мкр. Вынгапур •{" "}
+            {new Date().toLocaleDateString("ru-RU", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </Text>
+        </Space>
+
+        <Space>
+          <Tag
+            icon={<ClockCircleOutlined />}
+            style={{
+              background: COLORS.background,
+              color: COLORS.textSecondary,
+              border: `1px solid ${COLORS.border}`,
+              padding: "4px 12px",
+              borderRadius: RADIUS.full,
+            }}
+          >
+            Последняя синхронизация ~3 часа назад
+          </Tag>
+          <Button
+            type="primary"
+            icon={<SyncOutlined />}
+            onClick={() => navigate("/sync")}
+            style={{
+              background: COLORS.terracotta,
+              borderColor: COLORS.terracotta,
+              borderRadius: RADIUS.sm,
+            }}
+          >
+            Обновить
+          </Button>
         </Space>
       </div>
 
-      {/* Информационная карточка */}
-      <Card
-        style={{
-          marginBottom: 32,
-          maxWidth: 900,
-          margin: "0 auto 32px",
-          borderRadius: 16,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-        }}
-      >
-        <Row gutter={[24, 16]} justify="center">
-          <Col>
-            <Space size="large">
-              <Space>
-                <EnvironmentOutlined style={{ color: "#1890ff" }} />
-                <Text>мкр. Вынгапур</Text>
-              </Space>
-              <Divider type="vertical" />
-              <Space>
-                <CalendarOutlined style={{ color: "#52c41a" }} />
-                <Text>
-                  {new Date().toLocaleDateString("ru-RU", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </Text>
-              </Space>
-              <Divider type="vertical" />
-              <Space>
-                <PhoneOutlined style={{ color: "#fa8c16" }} />
-                <Text>+7 (3496) XX-XX-XX</Text>
-              </Space>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Карточки разделов */}
-      <Row gutter={[24, 24]} justify="center">
-        {sections.map((section) => (
-          <Col xs={24} sm={12} md={8} lg={8} xl={6} key={section.key}>
+      {/* Карточки статистики */}
+      <Row gutter={[24, 24]}>
+        {stats.map((item) => (
+          <Col xs={24} sm={12} md={12} lg={6} key={item.key}>
             <Card
               hoverable
               style={{
                 height: "100%",
-                borderRadius: 16,
-                borderColor: section.borderColor,
-                borderWidth: 1,
-                overflow: "hidden",
-                transition: "all 0.3s",
+                borderRadius: RADIUS.lg,
+                border: `1px solid ${COLORS.borderLight}`,
+                boxShadow: COLORS.shadowSmall,
+                transition: `all ${THEME.animation.fast}`,
                 cursor: "pointer",
               }}
-              styles={{ body: { padding: "24px 20px" } }}
-              onClick={() => navigate(section.path)}
+              styles={{ body: { padding: "20px 24px" } }}
+              onClick={() => navigate(item.path)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = item.color;
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = COLORS.shadowMedium;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = COLORS.borderLight;
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = COLORS.shadowSmall;
+              }}
             >
               <Space
                 direction="vertical"
-                size="middle"
+                size="small"
                 style={{ width: "100%" }}
               >
-                {/* Иконка */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    background: section.bgColor,
-                    borderRadius: 50,
-                    width: 100,
-                    height: 100,
-                    margin: "0 auto",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                <Space
+                  style={{ width: "100%", justifyContent: "space-between" }}
                 >
-                  {section.icon}
-                </div>
-
-                {/* Заголовок */}
-                <Title
-                  level={3}
-                  style={{
-                    margin: 0,
-                    textAlign: "center",
-                    color: section.color,
-                  }}
-                >
-                  {section.title}
-                </Title>
-
-                {/* Описание */}
-                <Paragraph
-                  style={{
-                    textAlign: "center",
-                    color: "#666",
-                    minHeight: 60,
-                    margin: 0,
-                  }}
-                >
-                  {section.description}
-                </Paragraph>
-
-                {/* Статистика (если есть) */}
-                {section.stats && (
-                  <div style={{ textAlign: "center" }}>
-                    <Statistic
-                      title={section.stats.label}
-                      value={section.stats.value}
-                      valueStyle={{
-                        color: section.color,
-                        fontSize: 28,
-                        fontWeight: 600,
-                      }}
-                    />
+                  <Text
+                    style={{ color: COLORS.textSecondary, fontWeight: 500 }}
+                  >
+                    {item.title}
+                  </Text>
+                  <div
+                    style={{
+                      padding: 4,
+                      borderRadius: 4,
+                      background: `${item.color}15`, // 15% opacity
+                    }}
+                  >
+                    {/* Пример графика (SVG line) */}
+                    <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
+                      <path
+                        d="M0 15C5 15, 10 5, 15 10S25 18, 30 8S38 12, 40 10"
+                        stroke={item.color}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
                   </div>
-                )}
+                </Space>
 
-                {/* Кнопка */}
-                <Button
-                  type="primary"
-                  block
-                  size="large"
-                  style={{
-                    marginTop: 8,
-                    background: section.color,
-                    border: "none",
-                    borderRadius: 8,
+                <Statistic
+                  value={item.value}
+                  loading={loading}
+                  prefix={item.prefix}
+                  suffix={item.suffix}
+                  valueStyle={{
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: COLORS.textPrimary,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
-                  icon={<ArrowRightOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(section.path);
-                  }}
-                >
-                  Перейти
-                </Button>
+                />
+
+                <div style={{ marginTop: 8 }}>
+                  <Button
+                    type="link"
+                    style={{
+                      padding: 0,
+                      height: "auto",
+                      color: item.color,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(item.path);
+                    }}
+                  >
+                    Подробнее <ArrowRightOutlined style={{ marginLeft: 4 }} />
+                  </Button>
+                </div>
               </Space>
             </Card>
           </Col>
         ))}
       </Row>
 
+      {/* Дополнительный раздел (например, Дашборд или Быстрые действия) */}
+      <Card
+        title="Навигация по разделам"
+        style={{
+          marginTop: 24,
+          borderRadius: RADIUS.lg,
+          background: COLORS.surface,
+          border: `1px solid ${COLORS.borderLight}`,
+        }}
+      >
+        <Row gutter={[16, 16]}>
+          <Col xs={12} sm={8} md={6}>
+            <div
+              style={{
+                padding: 16,
+                borderRadius: RADIUS.md,
+                background: COLORS.background,
+                textAlign: "center",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onClick={() => navigate("/dashboard")}
+            >
+              <DashboardOutlined
+                style={{
+                  fontSize: 24,
+                  color: COLORS.primaryDark,
+                  marginBottom: 8,
+                }}
+              />
+              <div style={{ fontWeight: 600, color: COLORS.textPrimary }}>
+                Аналитика
+              </div>
+            </div>
+          </Col>
+          {/* Можно добавить другие быстрые действия */}
+        </Row>
+      </Card>
+
       {/* Футер */}
-      <div style={{ textAlign: "center", marginTop: 48, color: "#8c8c8c" }}>
-        <Text type="secondary">
-          © 2024 VGP Housing Registry • Данные обновляются автоматически
+      <div
+        style={{ textAlign: "center", marginTop: 48, color: COLORS.textMuted }}
+      >
+        <Text style={{ color: COLORS.textMuted }}>
+          © {new Date().getFullYear()} • УИТиС
         </Text>
       </div>
     </div>

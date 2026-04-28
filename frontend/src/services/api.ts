@@ -1,8 +1,8 @@
 import axios from "axios";
 
 // Для Vite используем import.meta.env вместо process.env
-// const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8001";
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = "http://localhost:8001/api";
+// const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -167,6 +167,7 @@ export const ownersApi = {
     page?: number;
     page_size?: number;
     search?: string;
+    address?: string; // ← ДОБАВИТЬ
   }): Promise<OwnersGroupedResponse> => {
     const response = await api.get("/owners/grouped-by-address", {
       params,
@@ -203,6 +204,7 @@ export const residentsApi = {
     vid_fond?: string; // ✅ Параметр
     sort_field?: string;
     sort_order?: "ASC" | "DESC";
+    privilege?: string; // ← ДОБАВИТЬ
   }): Promise<ResidentListResponse> => {
     const response = await api.get("/residents/list", { params });
 

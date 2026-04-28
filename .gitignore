@@ -6,3 +6,5 @@ __pycache__/
 /frontend/.env
 /backend/.env
 /frontend/package-lock.json
+/frontend/dist/
+/frontend/public/

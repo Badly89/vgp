@@ -17,6 +17,7 @@ async def get_residents_list(
     sort_field: Optional[str] = None,
     sort_order: str = Query("ASC", regex="^(ASC|DESC)$"),
     group_by: Optional[str] = None,
+    privilege: Optional[str] = None,
     
 ):
     """Получение списка жителей"""
@@ -31,7 +32,7 @@ async def get_residents_list(
                 page=page, page_size=page_size,
                 search=search, gender=gender, category=category, is_child=is_child,
                 sort_field=sort_field, sort_order=sort_order, 
-                vid_fond=vid_fond
+                vid_fond=vid_fond,privilege=privilege,
             )
             return result
     except Exception as e:

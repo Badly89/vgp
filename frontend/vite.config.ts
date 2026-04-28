@@ -9,7 +9,7 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8010",
+        target: "http://localhost:8001",
         changeOrigin: true,
       },
     },
@@ -18,6 +18,7 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
   },
+  publicDir: "public", // явно указываем public директорию
   optimizeDeps: {
     include: ["@simplewebauthn/browser"],
     esbuildOptions: {

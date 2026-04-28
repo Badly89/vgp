@@ -1,20 +1,8 @@
 import React from "react";
-import {
-  Modal,
-  Card,
-  Descriptions,
-  Space,
-  Tag,
-  Avatar,
-  Collapse,
-  Row,
-  Col,
-  Tooltip,
-} from "antd";
+import { Modal, Card, Descriptions, Space, Tag, Avatar, Collapse } from "antd";
 import {
   UserOutlined,
   PhoneOutlined,
-  HomeOutlined,
   CalendarOutlined,
   ManOutlined,
   WomanOutlined,
@@ -22,7 +10,6 @@ import {
   BankOutlined,
   HeartOutlined,
   FileTextOutlined,
-  TeamOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
 
@@ -139,6 +126,30 @@ export const ResidentModal: React.FC<ResidentModalProps> = ({
                 )}
               </Space>
             </Descriptions.Item>
+            {/* ✅ ДОБАВИТЬ ЭТОТ БЛОК */}
+            <Descriptions.Item label="Вид фонда" span={2}>
+              {resident?.["Вид фонда"] ? (
+                <Tag
+                  color={
+                    String(resident["Вид фонда"]).toLowerCase().includes("спец")
+                      ? "blue"
+                      : String(resident["Вид фонда"])
+                            .toLowerCase()
+                            .includes("маневр")
+                        ? "orange"
+                        : String(resident["Вид фонда"])
+                              .toLowerCase()
+                              .includes("коммерч")
+                          ? "green"
+                          : "default"
+                  }
+                >
+                  {resident["Вид фонда"]}
+                </Tag>
+              ) : (
+                "—"
+              )}
+            </Descriptions.Item>
 
             <Descriptions.Item label="Контакты">
               <Space size="large" wrap>
@@ -188,23 +199,6 @@ export const ResidentModal: React.FC<ResidentModalProps> = ({
                   )}
                 </div>
               </div>
-            </Descriptions.Item>
-            <Descriptions.Item label="Вид фонда">
-              <Tag
-                color={
-                  resident?.["Вид фонда"]?.toLowerCase().includes("спец")
-                    ? "blue"
-                    : resident?.["Вид фонда"]?.toLowerCase().includes("маневр")
-                      ? "orange"
-                      : resident?.["Вид фонда"]
-                            ?.toLowerCase()
-                            .includes("коммерч")
-                        ? "green"
-                        : "default"
-                }
-              >
-                {resident?.["Вид фонда"] || "—"}
-              </Tag>
             </Descriptions.Item>
 
             {resident["Дата регистрации"] && (
@@ -503,13 +497,6 @@ export const ResidentModal: React.FC<ResidentModalProps> = ({
                         {formatValue(resident["Льготные категории"])}
                       </Tag>
                     </div>
-                  )}
-
-                  {/* Ветеран */}
-                  {resident["Ветеран"] && (
-                    <Descriptions.Item label="Ветеран">
-                      <Tag color="gold">{resident["Ветеран"]}</Tag>
-                    </Descriptions.Item>
                   )}
                 </div>
               ),

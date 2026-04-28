@@ -9,13 +9,13 @@ import {
   Tag,
   Row,
   Col,
-  Avatar,
   Pagination,
   Spin,
   Empty,
-  Tooltip,
   Radio,
-  List,
+  Drawer,
+  Tooltip,
+  Table,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,12 +24,22 @@ import {
   PhoneOutlined,
   HomeOutlined,
   EnvironmentOutlined,
-  TeamOutlined,
+  FilterOutlined,
+  RightOutlined,
+  CalendarOutlined,
   ManOutlined,
   WomanOutlined,
 } from "@ant-design/icons";
-import { ResidentModal } from "../Modals/ResidentModal";
-import { residentsApi, ResidentItem } from "../../services/api";
+import { ResidentDrawer } from "../Drawers/ResidentDrawer";
+import { GerbSpinner } from "../GerbSpinner";
+import { residentsApi, ResidentItem, ownersApi } from "../../services/api";
+import { ExportButton } from "../ExportButton";
+import { THEME } from "../../styles/theme";
+
+const COLORS = THEME.colors;
+const RADIUS = THEME.radius;
+// Используем фиксированную ширину для полей в Drawer
+const FILTER_INPUT_WIDTH = 340;
 
 const { Option } = Select;
 
@@ -37,36 +47,35 @@ export const ResidentsTable: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Группировка
   const urlGroupBy = searchParams.get("group") as "none" | "house" | null;
   const [groupBy, setGroupBy] = useState<"none" | "house">(
-    urlGroupBy || "none",
+    urlGroupBy || "house",
   );
 
-  // Данные
   const [data, setData] = useState<ResidentItem[]>([]);
   const [allData, setAllData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(24);
+  const [pageSize, setPageSize] = useState(20);
 
   // Фильтры
   const [searchText, setSearchText] = useState("");
   const [gender, setGender] = useState<string>();
   const [category, setCategory] = useState<string>();
   const [isChild, setIsChild] = useState<string>();
-  const [vidFond, setVidFond] = useState<string>(); // ✅ Состояние
+  const [vidFond, setVidFond] = useState<string>();
+  const [privilege, setPrivilege] = useState<string>();
 
-  // Списки для фильтров
+  // Опции фильтров
   const [genders, setGenders] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [privileges, setPrivileges] = useState<string[]>([]);
 
-  // Модальное окно
+  const [filterVisible, setFilterVisible] = useState(false);
   const [selectedResident, setSelectedResident] = useState<any>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
-  // Форматирование даты
   const formatDate = (dateStr: string): string => {
     if (!dateStr) return "—";
     try {
@@ -78,12 +87,10 @@ export const ResidentsTable: React.FC = () => {
     }
   };
 
-  // Получение ФИО
   const getFullName = (record: any): string => {
     return record["ФИО"] || record["ФИО жителя"] || "Не указано";
   };
 
-  // Получение адреса
   const getAddress = (record: any): string => {
     const addrField = record["Почтовый адрес"];
     if (Array.isArray(addrField) && addrField.length > 0) {
@@ -92,23 +99,33 @@ export const ResidentsTable: React.FC = () => {
     return "Без адреса";
   };
 
-  // Определение пола
   const getGender = (record: any): string | null => {
     if (record["Пол"]) return record["Пол"];
     const name = getFullName(record).toLowerCase();
-    if (name.includes("кызы") || name.includes("вна")) return "Женский";
+    if (name.includes("кызы") || name.includes("вна") || name.includes("чна"))
+      return "Женский";
     if (name.includes("оглы") || name.includes("вич")) return "Мужской";
     return null;
   };
 
-  // Проверка аварийности
-  const isEmergency = (record: any): boolean => {
-    const value = record["Аварийный дом"];
-    if (Array.isArray(value)) return value[0] === true;
-    return value === true || value === "Да" || value === "да";
+  const getAge = (record: any): number | null => {
+    return record["Возраст (числом)"] || record["Возраст"] || null;
   };
 
-  // Загрузка фильтров
+  const getApartment = (record: any): string => {
+    return record["№ квартиры"] || record["Квартира"] || "—";
+  };
+
+  const getPhone = (record: any): string => {
+    return record["Телефон"] || "—";
+  };
+
+  const showDetails = (resident: any) => {
+    setSelectedResident(resident);
+    setDrawerVisible(true);
+  };
+
+  // Загрузка опций фильтров
   const loadFilterOptions = async () => {
     try {
       const response = await residentsApi.getList({ page: 1, page_size: 5000 });
@@ -121,6 +138,30 @@ export const ResidentsTable: React.FC = () => {
       });
       setGenders(Array.from(genderSet).sort());
       setCategories(Array.from(categorySet).sort());
+
+      // Загрузка льгот (как в рабочем коде)
+      const privilegeSet = new Set<string>();
+      rows.forEach((item: any) => {
+        const val = item["Льготные категории"];
+        if (val && Array.isArray(val)) {
+          val.forEach((v) => {
+            const str = String(v).replace(/^"|"$/g, "");
+            if (str && str !== "null") privilegeSet.add(str);
+          });
+        } else if (val && typeof val === "string") {
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((v) => {
+                if (v && v !== "null") privilegeSet.add(String(v));
+              });
+            }
+          } catch {
+            if (val !== "null") privilegeSet.add(val);
+          }
+        }
+      });
+      setPrivileges(Array.from(privilegeSet).sort());
     } catch (error) {
       console.error("Ошибка загрузки фильтров:", error);
     }
@@ -130,75 +171,89 @@ export const ResidentsTable: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
+      const response = await residentsApi.getList({
+        page: 1,
+        page_size: 5000,
+        search: searchText || undefined,
+        gender: gender || undefined,
+        category: category || undefined,
+        is_child: isChild || undefined,
+        vid_fond: vidFond || undefined,
+        privilege: privilege || undefined,
+      });
+
+      const residents = response.data || [];
+
       if (groupBy === "house") {
         // Группировка по домам
-        const response = await residentsApi.getList({
-          page: 1,
-          page_size: 5000,
-          search: searchText || undefined,
-          gender: gender || undefined,
-          category: category || undefined,
-          is_child: isChild || undefined,
-          vid_fond: vidFond || undefined, // ✅ Передаем
-        });
-
-        const residents = response.data || [];
-
-        // Группируем
         const houseMap = new Map<string, any>();
+
+        // Загрузка собственников для проверки наличия муниципального фонда
+        let ownersMap = new Map<string, boolean>();
+        try {
+          const ownersResponse = await ownersApi.getList({
+            page: 1,
+            page_size: 5000,
+          });
+          (ownersResponse.data || []).forEach((owner: any) => {
+            if (
+              owner["Муниципальный ж/ф, кол-во квартир"] > 0 ||
+              owner["Муниципальный ж/ф, S квартир(м2)"] > 0
+            ) {
+              const addr = owner.address_display || "";
+              const house =
+                owner.house_number ||
+                (Array.isArray(owner["№ дома"])
+                  ? String(owner["№ дома"][0])
+                  : "");
+              const key = `${addr}|${house}`;
+              ownersMap.set(key, true);
+            }
+          });
+        } catch (e) {
+          console.error("Ошибка загрузки собственников:", e);
+        }
 
         residents.forEach((r: any) => {
           const address = getAddress(r);
           let houseNumber = "—";
           const houseField = r["№ дома"];
+
+          // Проверка муниципального по жителю
+          const isMunicipalResident =
+            r["Муниципальный ж/ф, кол-во квартир"] > 0 ||
+            r["Муниципальный"] === true;
+
           if (Array.isArray(houseField) && houseField.length > 0) {
             houseNumber = String(houseField[0]);
           } else if (houseField) {
             houseNumber = String(houseField);
           }
-
           const key = `${address}|${houseNumber}`;
 
           if (!houseMap.has(key)) {
             houseMap.set(key, {
               address,
               house_number: houseNumber,
+              residents: [],
               total_residents: 0,
-              adults_count: 0,
-              children_count: 0,
-              apartments: new Set(),
-              is_emergency: false,
+              hasMunicipal: false,
             });
           }
-
           const house = houseMap.get(key);
+          house.residents.push(r);
           house.total_residents++;
 
-          const isChildResident =
-            r["Ребенок"] === "Да" || r["Ребенок"] === true;
-          if (isChildResident) {
-            house.children_count++;
-          } else {
-            house.adults_count++;
-          }
-
-          const apartment = r["Квартира"] || r["№ квартиры"] || "—";
-          house.apartments.add(apartment);
-
-          if (isEmergency(r)) {
-            house.is_emergency = true;
+          // Если в доме есть муниципальные квартиры у жителя ИЛИ у собственника
+          if (isMunicipalResident || ownersMap.has(key)) {
+            house.hasMunicipal = true;
           }
         });
 
         const houses: any[] = [];
-        houseMap.forEach((house) => {
-          houses.push({
-            ...house,
-            apartments: house.apartments.size,
-          });
-        });
+        houseMap.forEach((house) => houses.push(house));
 
-        // Сортируем
+        // Сортировка
         houses.sort((a, b) => {
           const addrCompare = a.address.localeCompare(b.address, "ru");
           if (addrCompare !== 0) return addrCompare;
@@ -211,23 +266,10 @@ export const ResidentsTable: React.FC = () => {
         setTotal(houses.length);
         setData([]);
       } else {
-        // Обычный список
-        const response = await residentsApi.getList({
-          page,
-          page_size: pageSize,
-          search: searchText || undefined,
-          gender: gender || undefined,
-          category: category || undefined,
-          is_child: isChild || undefined,
-          vid_fond: vidFond || undefined, // ✅ Передаем
-        });
-
-        setData(response.data || []);
+        // Список (таблица)
+        setData(residents);
         setTotal(response.total || 0);
-      }
-
-      if (genders.length === 0) {
-        await loadFilterOptions();
+        setAllData([]);
       }
     } catch (error) {
       console.error("Ошибка загрузки:", error);
@@ -238,7 +280,8 @@ export const ResidentsTable: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [page, pageSize, groupBy, gender, category, isChild, vidFond]);
+    if (genders.length === 0) loadFilterOptions();
+  }, [page, pageSize, groupBy, gender, category, isChild, vidFond, privilege]);
 
   const handleSearch = () => {
     setPage(1);
@@ -251,236 +294,221 @@ export const ResidentsTable: React.FC = () => {
     setCategory(undefined);
     setIsChild(undefined);
     setVidFond(undefined);
+    setPrivilege(undefined);
     setPage(1);
     loadData();
   };
 
-  // Рендер карточки жителя
-  const renderResidentCard = (item: ResidentItem) => {
-    const fullName = getFullName(item);
-    const address = getAddress(item);
-    const age = item["Возраст (числом)"] || item["Возраст"];
-    const genderValue = getGender(item);
-    const phone = item["Телефон"];
-    const categoryValue = item["Категория"];
-    const isChildValue = item["Ребенок"] === "Да" || item["Ребенок"] === true;
-    const apartment = item["Квартира"] || item["№ квартиры"];
-    const houseNumber = item["№ дома"];
+  // Колонки для таблицы
+  const columns = [
+    {
+      title: "ФИО",
+      key: "fullName",
+      width: 250,
+      sorter: (a: any, b: any) =>
+        getFullName(a).localeCompare(getFullName(b), "ru"),
+      render: (_: any, record: any) => {
+        const genderValue = getGender(record);
+        const isChildValue =
+          record["Ребенок"] === "Да" || record["Ребенок"] === true;
+        const age = getAge(record);
 
-    return (
-      <Col xs={24} sm={12} md={8} lg={6} xl={6} key={item._id}>
-        <Card
-          hoverable
-          onClick={() => {
-            setSelectedResident(item);
-            setModalVisible(true);
-          }}
-          style={{ height: "100%", cursor: "pointer" }}
-          bodyStyle={{ padding: "16px" }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              marginBottom: 12,
+        return (
+          <a
+            onClick={(e) => {
+              e.stopPropagation();
+              showDetails(record);
             }}
+            style={{ fontWeight: 500, color: COLORS.textPrimary }}
           >
-            <Avatar
-              size={56}
-              icon={
-                genderValue === "Женский" ? <WomanOutlined /> : <ManOutlined />
-              }
-              style={{
-                backgroundColor:
-                  genderValue === "Женский" ? "#eb2f96" : "#1890ff",
-                marginRight: 12,
-                flexShrink: 0,
-              }}
+            <Space>
+              {genderValue === "Женский" ? (
+                <WomanOutlined style={{ color: COLORS.terracotta }} />
+              ) : (
+                <ManOutlined style={{ color: COLORS.northernBlue }} />
+              )}
+              <span>{getFullName(record)}</span>
+              {age && (
+                <Tag
+                  style={{
+                    background: COLORS.background,
+                    color: COLORS.textSecondary,
+                    border: "none",
+                    borderRadius: RADIUS.xs,
+                    fontSize: 11,
+                    margin: 0,
+                  }}
+                >
+                  {age} лет
+                </Tag>
+              )}
+              {isChildValue && (
+                <Tag
+                  style={{
+                    background: "rgba(212, 149, 106, 0.1)",
+                    color: COLORS.warning,
+                    border: "none",
+                    borderRadius: RADIUS.xs,
+                    fontSize: 11,
+                    margin: 0,
+                  }}
+                >
+                  👶 ребенок
+                </Tag>
+              )}
+            </Space>
+          </a>
+        );
+      },
+    },
+    {
+      title: "Адрес",
+      key: "address",
+      width: 300,
+      render: (_: any, record: any) => {
+        const address = getAddress(record);
+        const apartment = getApartment(record);
+        return (
+          <span style={{ color: COLORS.textSecondary }}>
+            <EnvironmentOutlined
+              style={{ marginRight: 6, color: COLORS.terracotta }}
             />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 16,
-                  marginBottom: 4,
-                  wordBreak: "break-word",
-                }}
-              >
-                {fullName}
-              </div>
-              <Space size={4} wrap>
-                {age && <Tag color="blue">{age} лет</Tag>}
-                {genderValue && (
-                  <Tag color={genderValue === "Женский" ? "pink" : "blue"}>
-                    {genderValue}
-                  </Tag>
-                )}
-                {isChildValue && <Tag color="orange">Ребенок</Tag>}
-                {categoryValue && <Tag color="cyan">{categoryValue}</Tag>}
-                {/* После categoryValue */}
-                {item["Вид фонда"] && (
-                  <Tag
-                    color={
-                      String(item["Вид фонда"]).toLowerCase().includes("спец")
-                        ? "blue"
-                        : String(item["Вид фонда"])
-                              .toLowerCase()
-                              .includes("маневр")
-                          ? "orange"
-                          : String(item["Вид фонда"])
-                                .toLowerCase()
-                                .includes("коммерч")
-                            ? "green"
-                            : "default"
-                    }
-                  >
-                    {item["Вид фонда"]}
-                  </Tag>
-                )}
-              </Space>
-            </div>
-          </div>
+            {address}
+            {apartment !== "—" && `, кв. ${apartment}`}
+          </span>
+        );
+      },
+    },
 
-          <div
+    {
+      title: "Дата рождения",
+      key: "birthDate",
+      width: 120,
+      render: (_: any, record: any) => {
+        const birthDate = record["Дата рождения"];
+        return birthDate ? (
+          <span style={{ color: COLORS.textPrimary }}>
+            <CalendarOutlined
+              style={{ marginRight: 6, color: COLORS.terracotta }}
+            />
+            {formatDate(birthDate)}
+          </span>
+        ) : (
+          <span style={{ color: COLORS.textMuted }}>—</span>
+        );
+      },
+    },
+    {
+      title: "Категория",
+      key: "category",
+      width: 150,
+      render: (_: any, record: any) => {
+        const cat = record["Категория"] || record["Категория населения"];
+        return cat ? (
+          <Tag
             style={{
-              backgroundColor: "#f5f5f5",
-              padding: "12px",
-              borderRadius: 8,
-              marginBottom: 8,
+              background: COLORS.northernIce,
+              color: COLORS.primaryDark,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: RADIUS.xs,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                marginBottom: 4,
-              }}
-            >
-              <EnvironmentOutlined
-                style={{ color: "#1890ff", marginRight: 8, marginTop: 3 }}
-              />
-              <span
-                style={{
-                  fontWeight: 500,
-                  fontSize: 13,
-                  wordBreak: "break-word",
-                }}
-              >
-                {address}
-              </span>
-            </div>
-            {houseNumber && (
-              <div style={{ marginTop: 4, marginLeft: 24 }}>
-                <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                  🏠 Дом №{houseNumber}
-                </span>
-              </div>
-            )}
-            {apartment && (
-              <div style={{ marginTop: 4, marginLeft: 24 }}>
-                <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                  🚪 Кв. {apartment}
-                </span>
-              </div>
-            )}
-          </div>
+            {cat}
+          </Tag>
+        ) : (
+          <span style={{ color: COLORS.textMuted }}>—</span>
+        );
+      },
+    },
+    {
+      title: "Льготы",
+      key: "privilege",
+      width: 150,
+      render: (_: any, record: any) => {
+        const priv = record["Льготная категория"];
+        return priv ? (
+          <Tag
+            style={{
+              background: COLORS.terracottaLight,
+              color: COLORS.primaryDark,
+              border: "none",
+              borderRadius: RADIUS.xs,
+            }}
+          >
+            {priv}
+          </Tag>
+        ) : (
+          <span style={{ color: COLORS.textMuted }}>—</span>
+        );
+      },
+    },
+  ];
 
-          {phone && (
-            <div style={{ fontSize: 13, color: "#595959" }}>
-              <PhoneOutlined style={{ marginRight: 8 }} />
-              {phone}
-            </div>
-          )}
-        </Card>
-      </Col>
-    );
-  };
+  const paginatedData = data.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <>
-      <Card style={{ marginBottom: 24 }}>
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <Space
-            wrap
-            style={{ width: "100%", justifyContent: "space-between" }}
-          >
-            <Space wrap>
-              <Input
-                placeholder="Поиск по ФИО, адресу, телефону..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onPressEnter={handleSearch}
-                prefix={<SearchOutlined />}
-                style={{ width: 280 }}
-                allowClear
-              />
-              <Select
-                placeholder="Пол"
-                value={gender}
-                onChange={setGender}
-                style={{ width: 120 }}
-                allowClear
-              >
-                {genders.map((g) => (
-                  <Option key={g} value={g}>
-                    {g}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Категория"
-                value={category}
-                onChange={setCategory}
-                style={{ width: 140 }}
-                allowClear
-              >
-                {categories.map((c) => (
-                  <Option key={c} value={c}>
-                    {c}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Ребенок"
-                value={isChild}
-                onChange={setIsChild}
-                style={{ width: 110 }}
-                allowClear
-              >
-                <Option value="yes">Да</Option>
-                <Option value="no">Нет</Option>
-              </Select>
-              <Select
-                placeholder="Вид фонда"
-                value={vidFond}
-                onChange={setVidFond}
-                style={{ width: 160 }}
-                allowClear
-              >
-                <Option value="Коммерческий">Коммерческий</Option>
-                <Option value="Специализированный">Специализированный</Option>
-                <Option value="Маневренный">Маневренный</Option>
-              </Select>
-              <Button
-                type="primary"
-                onClick={handleSearch}
-                icon={<SearchOutlined />}
-              >
-                Поиск
-              </Button>
-              <Button onClick={handleReset} icon={<ReloadOutlined />}>
-                Сбросить
-              </Button>
-            </Space>
-
-            <Tag color="blue" style={{ fontSize: 14, padding: "4px 16px" }}>
-              👥 {groupBy === "house" ? "Всего домов" : "Всего жителей"}:{" "}
+    <div
+      style={{
+        padding: "0 24px",
+        background: COLORS.background,
+        minHeight: "100vh",
+      }}
+    >
+      {/* Верхняя панель */}
+      <Card
+        size="small"
+        style={{
+          marginBottom: 24,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          backgroundColor: COLORS.surface,
+          border: `1px solid ${COLORS.borderLight}`,
+          boxShadow: COLORS.shadowSmall,
+          borderRadius: RADIUS.sm,
+        }}
+      >
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space size="large">
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: COLORS.textPrimary,
+              }}
+            >
+              👥 {groupBy === "house" ? "Дома" : "Жители"}
+            </span>
+            <Tag
+              style={{
+                background: COLORS.terracotta,
+                color: "#fff",
+                border: "none",
+                borderRadius: RADIUS.full,
+                fontSize: 13,
+                padding: "2px 12px",
+              }}
+            >
               {total}
             </Tag>
           </Space>
-
           <Space>
-            <span style={{ color: "#8c8c8c" }}>Группировать:</span>
+            <Tooltip title="Фильтры">
+              <Button
+                icon={<FilterOutlined />}
+                type={
+                  searchText ||
+                  gender ||
+                  category ||
+                  isChild ||
+                  vidFond ||
+                  privilege
+                    ? "primary"
+                    : "default"
+                }
+                onClick={() => setFilterVisible(true)}
+              />
+            </Tooltip>
             <Radio.Group
               value={groupBy}
               onChange={(e) => {
@@ -491,129 +519,489 @@ export const ResidentsTable: React.FC = () => {
               buttonStyle="solid"
               size="small"
             >
-              <Radio.Button value="none">Без группировки</Radio.Button>
+              <Radio.Button value="none">Списком</Radio.Button>
               <Radio.Button value="house">По домам</Radio.Button>
             </Radio.Group>
+            <ExportButton
+              data={data}
+              title="Жители"
+              filename="residents"
+              columns={[
+                { key: "ФИО", label: "ФИО" },
+                { key: "Почтовый адрес", label: "Адрес" },
+                { key: "Телефон", label: "Телефон" },
+                { key: "Дата рождения", label: "Дата рождения" },
+                { key: "Категория", label: "Категория" },
+              ]}
+              disabled={loading}
+            />
           </Space>
         </Space>
+
+        {/* Активные фильтры */}
+        {(searchText ||
+          gender ||
+          category ||
+          isChild ||
+          vidFond ||
+          privilege) && (
+          <Space wrap style={{ marginTop: 12 }}>
+            <span style={{ color: COLORS.textMuted, fontSize: 13 }}>
+              Активные фильтры:
+            </span>
+            {searchText && (
+              <Tag
+                closable
+                onClose={() => {
+                  setSearchText("");
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.northernBlue,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                🔍 {searchText}
+              </Tag>
+            )}
+            {gender && (
+              <Tag
+                closable
+                onClose={() => {
+                  setGender(undefined);
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.terracotta,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                {gender === "Женский" ? "👩 Женский" : "👨 Мужской"}
+              </Tag>
+            )}
+            {category && (
+              <Tag
+                closable
+                onClose={() => {
+                  setCategory(undefined);
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.primary,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                📋 {category}
+              </Tag>
+            )}
+            {isChild && (
+              <Tag
+                closable
+                onClose={() => {
+                  setIsChild(undefined);
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.warning,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                {isChild === "yes" ? "👶 Ребенок" : "👤 Взрослый"}
+              </Tag>
+            )}
+            {vidFond && (
+              <Tag
+                closable
+                onClose={() => {
+                  setVidFond(undefined);
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.northernAurora,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                🏢 {vidFond}
+              </Tag>
+            )}
+            {privilege && (
+              <Tag
+                closable
+                onClose={() => {
+                  setPrivilege(undefined);
+                  handleSearch();
+                }}
+                style={{
+                  background: COLORS.terracottaDark,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: RADIUS.sm,
+                }}
+              >
+                ⭐ {privilege}
+              </Tag>
+            )}
+          </Space>
+        )}
       </Card>
 
-      <Spin spinning={loading}>
+      <Spin
+        indicator={<GerbSpinner size={50} animation="spin3d" />}
+        spinning={loading}
+      >
         {groupBy === "house" ? (
-          allData.length > 0 ? (
-            <List
-              dataSource={allData}
-              renderItem={(house: any) => (
-                <List.Item
+          // Группировка по домам — карточки домов
+          <div>
+            {allData
+              .slice((page - 1) * pageSize, page * pageSize)
+              .map((house: any) => (
+                <Card
                   key={`${house.address}|${house.house_number}`}
                   style={{
-                    padding: "16px 20px",
+                    marginBottom: 16,
+                    borderRadius: RADIUS.lg,
+                    border: `1px solid ${COLORS.borderLight}`,
+                    boxShadow: COLORS.shadowSmall,
                     cursor: "pointer",
-                    borderRadius: 8,
-                    marginBottom: 8,
-                    backgroundColor: "#fff",
-                    border: "1px solid #f0f0f0",
+                    transition: `all ${THEME.animation.fast}`,
                   }}
+                  styles={{ body: { padding: "16px 20px" } }}
                   onClick={() =>
                     navigate(
                       `/residents/house/${encodeURIComponent(house.address)}/${encodeURIComponent(house.house_number)}`,
                     )
                   }
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = COLORS.terracotta;
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = COLORS.shadowMedium;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = COLORS.borderLight;
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = COLORS.shadowSmall;
+                  }}
                 >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        size={48}
-                        icon={<HomeOutlined />}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
                         style={{
-                          backgroundColor: house.is_emergency
-                            ? "#ff4d4f"
-                            : "#1890ff",
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: COLORS.textPrimary,
+                          marginBottom: 4,
                         }}
-                      />
-                    }
-                    title={
-                      <Space wrap>
-                        <span style={{ fontWeight: 600, fontSize: 16 }}>
-                          {house.address}
-                        </span>
-                        <Tag color="blue">Дом №{house.house_number}</Tag>
-                        {house.is_emergency ? (
-                          <Tag color="red">⚠️ Аварийный</Tag>
-                        ) : (
-                          <Tag color="green">✅ Не аварийный</Tag>
+                      >
+                        <EnvironmentOutlined
+                          style={{ marginRight: 8, color: COLORS.terracotta }}
+                        />
+                        {house.address}, {house.house_number}
+                      </div>
+                      <div
+                        style={{ fontSize: 13, color: COLORS.textSecondary }}
+                      >
+                        {house.total_residents}{" "}
+                        {house.total_residents === 1
+                          ? "житель"
+                          : house.total_residents < 5
+                            ? "жителя"
+                            : "жителей"}
+                        {house.hasMunicipal && (
+                          <Tag
+                            style={{
+                              marginLeft: 8,
+                              background: COLORS.northernBlue,
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: RADIUS.xs,
+                              fontSize: 11,
+                              padding: "0 6px",
+                            }}
+                          >
+                            🏛️ мун.
+                          </Tag>
                         )}
-                      </Space>
-                    }
-                    description={
-                      <Space size="large" style={{ marginTop: 8 }}>
-                        <span>
-                          <UserOutlined />{" "}
-                          <strong>{house.total_residents}</strong> жителей
-                        </span>
-                        <span>
-                          👤 <strong>{house.adults_count}</strong> взрослых
-                        </span>
-                        <span>
-                          🧒 <strong>{house.children_count}</strong> детей
-                        </span>
-                        <span>
-                          <HomeOutlined /> <strong>{house.apartments}</strong>{" "}
-                          квартир
-                        </span>
-                      </Space>
-                    }
-                  />
-                  <div style={{ color: "#1890ff", fontSize: 13 }}>
-                    Нажмите для просмотра →
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      {house.residents.slice(0, 3).map((r: any) => (
+                        <div
+                          key={r._id}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            background: COLORS.background,
+                            borderRadius: RADIUS.sm,
+                            padding: "6px 10px",
+                            minWidth: 80,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 500,
+                              color: COLORS.textPrimary,
+                              textAlign: "center",
+                            }}
+                          >
+                            {getFullName(r).split(" ").slice(0, 2).join(" ")}
+                          </span>
+                          {r["№ квартиры"] && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: COLORS.terracottaDark,
+                              }}
+                            >
+                              кв. {r["№ квартиры"]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {house.residents.length > 3 && (
+                        <Tag
+                          style={{
+                            background: COLORS.background,
+                            color: COLORS.textSecondary,
+                            border: "none",
+                            borderRadius: RADIUS.sm,
+                          }}
+                        >
+                          +{house.residents.length - 3}
+                        </Tag>
+                      )}
+                    </div>
+                    <RightOutlined
+                      style={{
+                        marginLeft: 16,
+                        color: COLORS.textSecondary,
+                        fontSize: 14,
+                      }}
+                    />
                   </div>
-                </List.Item>
-              )}
-              pagination={{
-                pageSize: 20,
-                showTotal: (t) => `Всего ${t} домов`,
-              }}
-            />
-          ) : (
-            <Empty description="Нет данных" />
-          )
-        ) : data.length > 0 ? (
-          <>
-            <Row gutter={[16, 16]}>
-              {data.map((item) => renderResidentCard(item))}
-            </Row>
+                </Card>
+              ))}
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <Pagination
                 current={page}
                 pageSize={pageSize}
                 total={total}
                 showSizeChanger
-                showQuickJumper
-                showTotal={(t) => `Всего ${t} жителей`}
-                pageSizeOptions={["24", "50", "100"]}
+                showTotal={(t) => `Всего ${t} домов`}
+                pageSizeOptions={["10", "20", "50"]}
                 onChange={(p, ps) => {
                   setPage(p);
-                  setPageSize(ps || 24);
+                  setPageSize(ps || 20);
                 }}
               />
             </div>
-          </>
+          </div>
+        ) : data.length > 0 ? (
+          // Режим списком — таблица
+          <Card
+            styles={{ body: { padding: 0 } }}
+            style={{
+              borderRadius: RADIUS.lg,
+              overflow: "hidden",
+              border: `1px solid ${COLORS.borderLight}`,
+              boxShadow: COLORS.shadowSmall,
+            }}
+          >
+            <Table
+              columns={columns}
+              dataSource={paginatedData}
+              rowKey="_id"
+              pagination={{
+                current: page,
+                pageSize,
+                total: total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (t) => `Всего ${t} жителей`,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                onChange: (p, ps) => {
+                  setPage(p);
+                  setPageSize(ps || 20);
+                },
+              }}
+              size="middle"
+              rowClassName={(_, index) =>
+                index % 2 === 0 ? "row-light" : "row-dark"
+              }
+              onRow={(record) => ({
+                style: { cursor: "pointer" },
+                onClick: () => showDetails(record),
+              })}
+            />
+          </Card>
         ) : (
-          <Empty description="Нет данных" />
+          <Empty description="Нет данных" style={{ marginTop: 48 }} />
         )}
       </Spin>
 
-      <ResidentModal
-        open={modalVisible}
-        onClose={() => setModalVisible(false)}
+      {/* Drawer фильтров */}
+      <Drawer
+        title="🔍 Фильтры жителей"
+        placement="right"
+        width={400}
+        open={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        styles={{ body: { padding: 0 } }}
+      >
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{
+            width: "100%",
+            padding: "0 24px 24px 24px",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <Input
+            placeholder="Поиск по ФИО, адресу..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            prefix={<SearchOutlined style={{ color: COLORS.textSecondary }} />}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          />
+
+          <Select
+            placeholder="Пол"
+            value={gender}
+            onChange={setGender}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          >
+            <Option value="Мужской">👨 Мужской</Option>
+            <Option value="Женский">👩 Женский</Option>
+          </Select>
+
+          <Select
+            placeholder="Категория"
+            value={category}
+            onChange={setCategory}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          >
+            {categories.map((c) => (
+              <Option key={c} value={c}>
+                {c}
+              </Option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="Ребенок"
+            value={isChild}
+            onChange={setIsChild}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          >
+            <Option value="yes">👶 Да</Option>
+            <Option value="no">👤 Нет</Option>
+          </Select>
+
+          <Select
+            placeholder="Вид фонда"
+            value={vidFond}
+            onChange={setVidFond}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          >
+            <Option value="Коммерческий">🏢 Коммерческий</Option>
+            <Option value="Специализированный">📋 Специализированный</Option>
+            <Option value="Маневренный">🚚 Маневренный</Option>
+          </Select>
+
+          <Select
+            placeholder="Льготные категории"
+            value={privilege}
+            onChange={setPrivilege}
+            size="large"
+            allowClear
+            style={{ borderRadius: RADIUS.sm, width: FILTER_INPUT_WIDTH }}
+          >
+            {privileges.map((p) => (
+              <Option key={p} value={p}>
+                ⭐ {p}
+              </Option>
+            ))}
+          </Select>
+
+          <Space style={{ width: FILTER_INPUT_WIDTH }}>
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              onClick={() => {
+                handleSearch();
+                setFilterVisible(false);
+              }}
+              block
+              style={{
+                background: COLORS.terracotta,
+                borderColor: COLORS.terracotta,
+                borderRadius: RADIUS.md,
+                height: 44,
+                fontWeight: 600,
+              }}
+            >
+              Применить
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                handleReset();
+                setFilterVisible(false);
+              }}
+              block
+              style={{ borderRadius: RADIUS.md, height: 44 }}
+            >
+              Сбросить
+            </Button>
+          </Space>
+        </Space>
+      </Drawer>
+
+      <ResidentDrawer
+        visible={drawerVisible}
         resident={selectedResident}
+        onClose={() => setDrawerVisible(false)}
         getFullName={getFullName}
         getAddress={getAddress}
         getGender={getGender}
         formatDate={formatDate}
-        isEmergency={isEmergency}
-        isNotEmergency={(r) => !isEmergency(r)}
       />
-    </>
+    </div>
   );
 };

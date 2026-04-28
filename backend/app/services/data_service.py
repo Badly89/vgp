@@ -659,15 +659,32 @@ class DataService:
             
             rows = await self.get_all_owners()
             
+            # ✅ Добавляем address_display и house_number к каждому собственнику
+            for owner in rows:
+                addr_field = owner.get("Почтовый адрес объекта", [])
+                if isinstance(addr_field, list) and len(addr_field) > 0:
+                    owner["address_display"] = addr_field[0].get("display_value", "Без адреса")
+                elif isinstance(addr_field, dict):
+                    owner["address_display"] = addr_field.get("display_value", "Без адреса")
+                else:
+                    owner["address_display"] = "Без адреса"
+                
+                house_field = owner.get("№ дома", "")
+                if isinstance(house_field, list):
+                    owner["house_number"] = str(house_field[0]) if house_field else ""
+                else:
+                    owner["house_number"] = str(house_field or "")
+            
             # Поиск
             if search:
                 search_lower = search.lower()
                 filtered_rows = []
                 for row in rows:
-                    for value in row.values():
-                        if value and search_lower in str(value).lower():
-                            filtered_rows.append(row)
-                            break
+                    if (search_lower in str(row.get("address_display", "")).lower() or
+                        search_lower in str(row.get("ФИО", "")).lower() or
+                        search_lower in str(row.get("Наименование", "")).lower() or
+                        search_lower in str(row.get("Телефон", "")).lower()):
+                        filtered_rows.append(row)
                 rows = filtered_rows
             
             # Сортировка
@@ -702,15 +719,31 @@ class DataService:
             result = await mariadb_client.fetch_one(sql, (owner_id,))
             
             if not result:
-                # Пробуем найти в DTable напрямую
                 all_owners = await self.get_all_owners()
                 for owner in all_owners:
                     if owner.get("_id") == owner_id:
+                        # ✅ ДОБАВИТЬ ДЛЯ ЭТОГО СЛУЧАЯ
+                        owner = add_address_fields(owner)
                         return owner
                 raise ValueError(f"Собственник с ID {owner_id} не найден")
             
             owner = json.loads(result["data"]) if isinstance(result["data"], str) else result["data"]
             owner["_id"] = result["_id"]
+            
+            # ✅ ДОБАВИТЬ ВОТ ЗДЕСЬ
+            addr_field = owner.get("Почтовый адрес объекта", [])
+            if isinstance(addr_field, list) and len(addr_field) > 0:
+                owner["address_display"] = addr_field[0].get("display_value", "Без адреса")
+            elif isinstance(addr_field, dict):
+                owner["address_display"] = addr_field.get("display_value", "Без адреса")
+            else:
+                owner["address_display"] = "Без адреса"
+            
+            house_field = owner.get("№ дома", "")
+            if isinstance(house_field, list):
+                owner["house_number"] = str(house_field[0]) if house_field else ""
+            else:
+                owner["house_number"] = str(house_field or "")
             
             print(f"✅ Найден собственник: {owner.get('ФИО', owner.get('Наименование', 'Не указано'))}")
             
@@ -762,6 +795,21 @@ class DataService:
             rows = await mariadb_client.fetch_all(sql, tuple(params))
             owners = [json.loads(row["data"]) for row in rows]
             
+            for owner in owners:
+                    addr_field = owner.get("Почтовый адрес объекта", [])
+                    if isinstance(addr_field, list) and len(addr_field) > 0:
+                        owner["address_display"] = addr_field[0].get("display_value", "Без адреса")
+                    elif isinstance(addr_field, dict):
+                        owner["address_display"] = addr_field.get("display_value", "Без адреса")
+                    else:
+                        owner["address_display"] = "Без адреса"
+                    
+                    house_field = owner.get("№ дома", "")
+                    if isinstance(house_field, list):
+                        owner["house_number"] = str(house_field[0]) if house_field else ""
+                    else:
+                        owner["house_number"] = str(house_field or "")
+
             # Общее количество
             count_sql = f"SELECT COUNT(*) as total FROM owners WHERE {where_clause}"
             count_result = await mariadb_client.fetch_one(count_sql, tuple(params[:-2]))
@@ -801,6 +849,7 @@ class DataService:
         except Exception as e:
             print(f"❌ Ошибка в get_owners_count: {e}")
             return 0
+   
     async def get_residents_list(
         self,
         page: int = 1,
@@ -1321,7 +1370,8 @@ class DataService:
         self,
         page: int = 1,
         page_size: int = 50,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        address: Optional[str] = None,  # ← ДОБАВИТЬ
     ) -> Dict[str, Any]:
         """Получение собственников, сгруппированных по адресу объекта"""
         try:
@@ -1364,6 +1414,7 @@ class DataService:
             for owner in all_owners:
                 address = get_address(owner)
                 house_num = get_house_number(owner)
+                owner_address = get_address(owner)
                 full_address = f"{address}, д.{house_num}" if house_num != "—" else address
                 
                 if search:
@@ -1375,6 +1426,11 @@ class DataService:
                             search_lower in owner_phone.lower() or 
                             search_lower in full_address.lower()):
                         continue
+
+                if address:
+                       address_lower = address.lower()
+                       if address_lower not in owner_address.lower():
+                        continue    
                 
                 if full_address not in grouped:
                     grouped[full_address] = []
@@ -1578,10 +1634,34 @@ class DataService:
         
         for i in range(0, len(all_owners), batch_size):
             batch = all_owners[i:i + batch_size]
-            values = [(o.get("_id"), json.dumps(o, ensure_ascii=False)) for o in batch if o.get("_id")]
+            
+            values = []
+            for o in batch:
+                owner_id = o.get("_id")
+                if not owner_id:
+                    continue
+                
+                # Извлекаем адрес из связи (link)
+                addr_field = o.get("Почтовый адрес объекта", [])
+                address_display = "Без адреса"
+                house_number = ""
+                
+                if isinstance(addr_field, list) and len(addr_field) > 0:
+                    address_display = addr_field[0].get("display_value", "Без адреса")
+                elif isinstance(addr_field, dict):
+                    address_display = addr_field.get("display_value", "Без адреса")
+                
+                # Извлекаем номер дома
+                house_field = o.get("№ дома", "")
+                if isinstance(house_field, list) and len(house_field) > 0:
+                    house_number = str(house_field[0])
+                elif house_field:
+                    house_number = str(house_field)
+                
+                values.append((owner_id, json.dumps(o, ensure_ascii=False), address_display, house_number))
             
             if values:
-                sql = "INSERT INTO owners (_id, data) VALUES (%s, %s)"
+                sql = "INSERT INTO owners (_id, data, address_display, house_number) VALUES (%s, %s, %s, %s)"
                 async with mariadb_client.pool.acquire() as conn:
                     async with conn.cursor() as cursor:
                         await cursor.executemany(sql, values)
@@ -1860,6 +1940,7 @@ class DataService:
         category: Optional[str] = None,
         is_child: Optional[str] = None,
         sort_field: Optional[str] = None,
+        privilege: Optional[str] = None,
         sort_order: str = "ASC",
         vid_fond: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -1893,7 +1974,11 @@ class DataService:
             params.append(vid_fond)
             # Добавить условие, что значение не null
             where_parts.append("JSON_EXTRACT(data, '$.Вид фонда') != 'null'")
-        
+
+        if privilege:
+            where_parts.append("JSON_CONTAINS(JSON_EXTRACT(data, '$.Льготные категории'), %s)")
+            params.append(f'"{privilege}"')  # Ищем строку в кавычках внутри массива
+                        
         where_clause = " AND ".join(where_parts)
         
         # Сортировка
