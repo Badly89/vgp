@@ -257,8 +257,8 @@ export const OwnerDrawer: React.FC<OwnerDrawerProps> = ({
                 onClick={() => {
                   const addr = owner.address_display || getAddress(owner);
                   const house = owner.house_number || "";
+                  console.log("НАЖАТА КНОПКА - переход:", addr, house);
                   onClose();
-                  // Передаем точный адрес и номер дома
                   navigate(
                     `/owners?address=${encodeURIComponent(addr)}&house=${encodeURIComponent(house)}`,
                   );

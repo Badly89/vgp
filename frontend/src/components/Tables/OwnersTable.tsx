@@ -52,7 +52,6 @@ export const OwnersTable: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
 
   const getAddress = (record: any): string => {
-    console.log("OwnersTable URL params:", { urlAddress, urlHouse }); // ← ЛОГ
     // 1. Новое поле из БД (добавлено на бэкенде)
     if (record.address_display && record.address_display !== "Без адреса") {
       return record.address_display;
@@ -87,12 +86,16 @@ export const OwnersTable: React.FC = () => {
       let pageNum = 1;
       let hasMore = true;
 
+      const searchQuery = urlAddress || searchText || undefined;
+
       while (hasMore) {
         const response = await ownersApi.getList({
           page: pageNum,
           page_size: 500,
-          search: searchText || undefined,
+          search: searchQuery,
         });
+
+        console.log("API response total:", response.total); // ← ЛОГ
 
         if (response.data && response.data.length > 0) {
           allOwners = [...allOwners, ...response.data];
@@ -103,48 +106,43 @@ export const OwnersTable: React.FC = () => {
         }
       }
 
-      // ✅ ФИЛЬТРАЦИЯ ПО URL ПАРАМЕТРАМ (из HousingDrawer)
+      // Фильтрация по дому
       let filtered = allOwners;
-      if (urlAddress) {
-        const addrLower = urlAddress.toLowerCase();
-        const houseFilter = urlHouse || "";
-
+      if (urlAddress && urlHouse) {
         filtered = allOwners.filter((owner: any) => {
-          const ownerAddr = (owner.address_display || "").toLowerCase();
           const ownerHouse =
             owner.house_number ||
             (Array.isArray(owner["№ дома"])
               ? String(owner["№ дома"][0])
               : String(owner["№ дома"] || ""));
-
-          if (houseFilter) {
-            return ownerAddr.includes(addrLower) && ownerHouse === houseFilter;
-          }
-          return ownerAddr.includes(addrLower);
+          return ownerHouse === urlHouse;
         });
       }
 
       setAllData(filtered);
       setTotal(filtered.length);
-      setExportData(filtered);
     } catch (error) {
-      console.error("Ошибка загрузки собственников:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // ПОИСК + URL — сбрасываем страницу и загружаем
+  useEffect(() => {
+    setPage(1);
+    loadAllData();
+  }, [searchText, urlAddress, urlHouse]);
+
+  // ПАГИНАЦИЯ — только загружаем, не сбрасываем страницу
   useEffect(() => {
     loadAllData();
-  }, [searchText]);
-
-  useEffect(() => {
-    if (urlAddress && !searchText) {
-      setSearchText(urlAddress);
-    }
-  }, [urlAddress]);
+  }, [page, pageSize]);
 
   const handleSearch = () => {
+    if (searchText && !urlAddress) {
+      // Сбрасываем URL параметры при ручном поиске
+      navigate("/owners");
+    }
     setPage(1);
     loadAllData();
   };
@@ -261,6 +259,10 @@ export const OwnersTable: React.FC = () => {
           onClick={() => {
             navigate("/owners");
             setSearchText("");
+            setPage(1); // Сбрасываем страницу
+            setTimeout(() => {
+              loadAllData();
+            }, 100);
           }}
           style={{ marginBottom: 16 }}
         >

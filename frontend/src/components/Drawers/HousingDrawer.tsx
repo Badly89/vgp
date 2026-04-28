@@ -466,12 +466,12 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
                   icon={<TeamOutlined />}
                   onClick={() => {
                     const addr =
-                      housing["Почтовый адрес"] ||
-                      housing?.["Почтовый адрес"] ||
-                      getAddress(housing);
+                      housing?.["Почтовый адрес"] || getAddress(housing);
                     const house = housing?.["Номер дома"] || "0";
+                    console.log("Переход к собственникам:", { addr, house }); // ← ЛОГ
+                    onClose();
                     navigate(
-                      `/residents/house/${encodeURIComponent(addr)}/${encodeURIComponent(house)}`,
+                      `/owners?address=${encodeURIComponent(addr)}&house=${encodeURIComponent(house)}`,
                     );
                   }}
                 >

@@ -1,17 +1,18 @@
-import React from "react";
-import { Layout, Menu, theme } from "antd";
+import React, { useState } from "react";
+import { Layout, Menu, Button, theme } from "antd";
 import {
   HomeOutlined,
   TeamOutlined,
   UserOutlined,
   ShopOutlined,
   DashboardOutlined,
-  BankOutlined,
   SyncOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const { Header, Content, Sider } = Layout;
+const { Header, Sider, Content } = Layout;
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -20,82 +21,69 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const menuItems = [
-    {
-      key: "/",
-      icon: <HomeOutlined />,
-      label: "Главная",
-    },
-    {
-      key: "/housing",
-      icon: <HomeOutlined />,
-      label: "Жилой фонд",
-    },
-    {
-      key: "/owners",
-      icon: <TeamOutlined />,
-      label: "Собственники",
-    },
-    {
-      key: "/residents",
-      icon: <UserOutlined />,
-      label: "Жители",
-    },
-    {
-      key: "/organizations",
-      icon: <BankOutlined />,
-      label: "Организации",
-    },
-    {
-      key: "/dashboard",
-      icon: <DashboardOutlined />,
-      label: "Аналитика",
-      children: [
-        {
-          key: "/dashboard",
-          label: "Конструктор",
-        },
-      ],
-    },
-    {
-      key: "/sync",
-      icon: <SyncOutlined />,
-      label: "Синхронизация",
-    },
+    { key: "/housing", icon: <HomeOutlined />, label: "Жилой фонд" },
+    { key: "/owners", icon: <TeamOutlined />, label: "Собственники" },
+    { key: "/residents", icon: <UserOutlined />, label: "Жители" },
+    { key: "/organizations", icon: <ShopOutlined />, label: "Организации" },
+    { key: "/dashboard", icon: <DashboardOutlined />, label: "Дашборд" },
+    { key: "/sync", icon: <SyncOutlined />, label: "Синхронизация" },
   ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
+      {/* Header */}
       <Header
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "0 24px",
+          padding: "0 16px",
           background: "#001529",
+          position: "sticky",
+          top: 0,
+          zIndex: 1000,
         }}
       >
+        <Button
+          type="text"
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          onClick={() => setCollapsed(!collapsed)}
+          style={{ fontSize: "16px", width: 48, height: 48, color: "#fff" }}
+        />
         <div
           style={{
-            color: "white",
-            fontSize: "20px",
+            color: "#fff",
+            fontSize: collapsed ? "0" : "18px",
             fontWeight: "bold",
+            marginLeft: collapsed ? 0 : 16,
+            transition: "all 0.3s",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
           }}
         >
-          🏢 Реестр жилого фонда мкрн. Вынгапуровский
+          🏢 Реестр жилого фонда
         </div>
       </Header>
+
       <Layout>
+        {/* Sidebar */}
         <Sider
-          width={250}
+          collapsible
+          collapsed={collapsed}
+          trigger={null}
+          width={220}
           style={{
             background: colorBgContainer,
             position: "sticky",
-            top: 0,
-            height: "100vh",
+            top: 64,
+            height: "calc(100vh - 64px)",
+            overflow: "auto",
+            borderRight: "1px solid #f0f0f0",
           }}
         >
           <Menu
@@ -106,7 +94,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             onClick={({ key }) => navigate(key)}
           />
         </Sider>
-        <Layout style={{ padding: "24px" }}>
+
+        {/* Content */}
+        <Layout style={{ padding: collapsed ? "24px 16px" : "24px" }}>
           <Content
             style={{
               padding: 24,

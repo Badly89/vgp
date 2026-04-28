@@ -233,3 +233,17 @@ code {
 .ant-tag.ant-tag-orange:hover {
   opacity: 1;
 }
+
+
+.ant-layout-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item {
+  padding-inline: calc(50% - 16px) !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item .anticon {
+  font-size: 18px;
+}
