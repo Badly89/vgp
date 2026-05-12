@@ -33,6 +33,43 @@ async def get_housing_list(
     except Exception as e:
         print(f"❌ Ошибка в get_housing_list роутере: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/list-with-stats")
+async def get_housing_list_with_stats(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    building_type: Optional[str] = None,
+    is_emergency: Optional[bool] = None,
+):
+    """Получение списка жилого фонда со статистикой по квартирам"""
+    try:
+        result = await data_service.get_housing_with_ownership_stats(
+            page=page,
+            page_size=page_size,
+            search=search,
+            category=category,
+            building_type=building_type,
+            is_emergency=is_emergency,
+        )
+        return result
+    except Exception as e:
+        print(f"❌ Ошибка в list-with-stats: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/categories/list")
+async def get_categories():
+    """Получение списка уникальных категорий"""
+    try:
+        categories = await data_service.get_categories()
+        return {"categories": categories}
+    except Exception as e:
+        print(f"❌ Ошибка в get_categories роутере: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/{housing_id}")
 async def get_housing_details(housing_id: str):
@@ -44,14 +81,4 @@ async def get_housing_details(housing_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         print(f"❌ Ошибка в get_housing_details роутере: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/categories/list")
-async def get_categories():
-    """Получение списка уникальных категорий"""
-    try:
-        categories = await data_service.get_categories()
-        return {"categories": categories}
-    except Exception as e:
-        print(f"❌ Ошибка в get_categories роутере: {e}")
         raise HTTPException(status_code=500, detail=str(e))

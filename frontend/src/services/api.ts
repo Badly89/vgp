@@ -1,8 +1,8 @@
 import axios from "axios";
 
 // Для Vite используем import.meta.env вместо process.env
-// const API_BASE_URL = "http://localhost:8001/api";
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = "http://localhost:8001/api";
+// const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -146,6 +146,17 @@ export const housingApi = {
   getCategories: async (): Promise<string[]> => {
     const response = await api.get("/housing/categories/list");
     return response.data.categories;
+  },
+  getListWithStats: async (params: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    category?: string;
+    building_type?: string;
+    is_emergency?: boolean;
+  }): Promise<HousingListResponse> => {
+    const response = await api.get("/housing/list-with-stats", { params });
+    return response.data;
   },
 };
 
@@ -320,6 +331,11 @@ export const syncApi = {
 
   runSyncNow: async () => {
     const response = await api.post("/sync/schedule/run-now");
+    return response.data;
+  },
+
+  getListWithStats: async (params: any) => {
+    const response = await api.get("/api/housing/list-with-stats", { params });
     return response.data;
   },
 };

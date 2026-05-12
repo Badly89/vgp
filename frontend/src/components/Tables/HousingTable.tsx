@@ -11,10 +11,11 @@ import {
   Pagination,
   Spin,
   Empty,
-  Radio,
   Table,
   Drawer,
   Tooltip,
+  Dropdown,
+  Checkbox,
 } from "antd";
 import {
   SearchOutlined,
@@ -24,10 +25,21 @@ import {
   CheckCircleOutlined,
   EnvironmentOutlined,
   FilterOutlined,
+  SettingOutlined,
+  CalendarOutlined,
+  BuildOutlined,
+  AppstoreOutlined,
+  ExpandOutlined,
+  TagOutlined,
+  BankOutlined,
+  KeyOutlined,
+  GatewayOutlined,
+  TeamOutlined,
+  UserOutlined,
+  DashboardOutlined,
 } from "@ant-design/icons";
 import { housingApi, HousingItem } from "../../services/api";
 import { sortByHouseNumber } from "../../utils/naturalSort";
-import { HousingCard } from "./HousingCard";
 import { HousingDrawer } from "../Drawers/HousingDrawer";
 import { GerbSpinner } from "../GerbSpinner";
 import { ExportButton } from "../ExportButton";
@@ -88,18 +100,47 @@ export const HousingTable: React.FC = () => {
 
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Убрано состояние groupBy
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "address",
+    "building_type",
+    "year",
+    "floors",
+    "apartments",
+    "municipal_apartments",
+    "private_apartments",
+    "area",
+    "category",
+    "residents",
+    "owners",
+    "status",
+  ]);
 
-  // Drawer вместо Modal
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedHousingId, setSelectedHousingId] = useState<string | null>(
     null,
   );
   const [filterVisible, setFilterVisible] = useState(false);
-
   const [exportData, setExportData] = useState<any[]>([]);
 
-  // Вспомогательные функции
+  // Сохранение visibleColumns в localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("housing_visible_columns");
+    if (saved) {
+      try {
+        setVisibleColumns(JSON.parse(saved));
+      } catch {}
+    }
+    loadAllData();
+    loadFilterOptions();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "housing_visible_columns",
+      JSON.stringify(visibleColumns),
+    );
+  }, [visibleColumns]);
+
   const formatValue = (value: any): string => {
     if (value === null || value === undefined) return "—";
     if (typeof value === "object") {
@@ -162,7 +203,6 @@ export const HousingTable: React.FC = () => {
     );
   };
 
-  // Загрузка данных
   const loadAllData = async () => {
     setLoading(true);
     try {
@@ -172,7 +212,7 @@ export const HousingTable: React.FC = () => {
       let hasMore = true;
 
       while (hasMore) {
-        const response = await housingApi.getList({
+        const response = await housingApi.getListWithStats({
           page: pageNum,
           page_size: limit,
         });
@@ -275,11 +315,9 @@ export const HousingTable: React.FC = () => {
         });
 
         allItems = [...allItems, ...processedData];
-        if (rows.length < 100 || allItems.length >= response.total) {
+        if (rows.length < 100 || allItems.length >= response.total)
           hasMore = false;
-        } else {
-          page++;
-        }
+        else page++;
       }
 
       setExportData(allItems);
@@ -342,11 +380,6 @@ export const HousingTable: React.FC = () => {
   };
 
   useEffect(() => {
-    loadAllData();
-    loadFilterOptions();
-  }, []);
-
-  useEffect(() => {
     if (allData.length > 0) {
       applyFilters(allData);
       loadAllFilteredForExport();
@@ -361,16 +394,19 @@ export const HousingTable: React.FC = () => {
     setSortOrder("asc");
   };
 
-  // Новая функция для открытия Drawer
   const showDetails = (id: string) => {
     setSelectedHousingId(id);
     setDrawerVisible(true);
   };
 
   // Колонки таблицы
-  const columns = [
+  const allColumns = [
     {
-      title: "Адрес",
+      title: (
+        <Tooltip title="Адрес">
+          <EnvironmentOutlined /> Адрес
+        </Tooltip>
+      ),
       key: "address",
       width: 280,
       sorter: (a: any, b: any) => {
@@ -404,9 +440,18 @@ export const HousingTable: React.FC = () => {
       ),
     },
     {
-      title: "Год постройки",
+      title: (
+        <Tooltip title="Год постройки">
+          <CalendarOutlined />
+        </Tooltip>
+      ),
       key: "year",
       width: 100,
+      sorter: (a: any, b: any) => {
+        const yearA = parseInt(a["Год ввода"] || a["Год постройки"] || "0");
+        const yearB = parseInt(b["Год ввода"] || b["Год постройки"] || "0");
+        return yearA - yearB;
+      },
       render: (_: any, record: any) => (
         <span style={{ color: COLORS.textPrimary }}>
           {record["Год ввода"] || record["Год постройки"] || "—"}
@@ -414,7 +459,11 @@ export const HousingTable: React.FC = () => {
       ),
     },
     {
-      title: "Этажность",
+      title: (
+        <Tooltip title="Этажность">
+          <BuildOutlined />
+        </Tooltip>
+      ),
       key: "floors",
       width: 80,
       render: (_: any, record: any) => {
@@ -427,7 +476,11 @@ export const HousingTable: React.FC = () => {
       },
     },
     {
-      title: "Квартиры",
+      title: (
+        <Tooltip title="Квартир">
+          <HomeOutlined />
+        </Tooltip>
+      ),
       key: "apartments",
       width: 80,
       render: (_: any, record: any) => (
@@ -437,7 +490,38 @@ export const HousingTable: React.FC = () => {
       ),
     },
     {
-      title: "Общая площадь",
+      title: <Tooltip title="Муниципальные квартиры">🏛️</Tooltip>,
+      key: "municipal_apartments",
+      width: 80,
+      render: (_: any, record: any) => {
+        const val = record["municipal_apartments"];
+        return val !== undefined && val !== null ? (
+          <span style={{ color: "#7B9EAF", fontWeight: 600 }}>{val}</span>
+        ) : (
+          "—"
+        );
+      },
+    },
+    {
+      // title: "🏠 Частных",
+      title: <Tooltip title="Частные квартиры">🏠</Tooltip>,
+      key: "private_apartments",
+      width: 80,
+      render: (_: any, record: any) => {
+        const val = record["private_apartments"];
+        return val !== undefined && val !== null ? (
+          <span style={{ color: "#5B8C5A", fontWeight: 600 }}>{val}</span>
+        ) : (
+          "—"
+        );
+      },
+    },
+    {
+      title: (
+        <Tooltip title="Общая площадь">
+          <GatewayOutlined />
+        </Tooltip>
+      ),
       key: "area",
       width: 120,
       render: (_: any, record: any) => {
@@ -450,7 +534,11 @@ export const HousingTable: React.FC = () => {
       },
     },
     {
-      title: "Категория",
+      title: (
+        <Tooltip title="Вид жилья">
+          <TagOutlined />
+        </Tooltip>
+      ),
       key: "category",
       width: 100,
       render: (_: any, record: any) => {
@@ -472,7 +560,11 @@ export const HousingTable: React.FC = () => {
       },
     },
     {
-      title: "Жителей",
+      title: (
+        <Tooltip title="Жителей">
+          <TeamOutlined />
+        </Tooltip>
+      ),
       key: "residents",
       width: 80,
       render: (_: any, record: any) => (
@@ -482,7 +574,11 @@ export const HousingTable: React.FC = () => {
       ),
     },
     {
-      title: "Собственников",
+      title: (
+        <Tooltip title="Собственников">
+          <UserOutlined />
+        </Tooltip>
+      ),
       key: "owners",
       width: 100,
       render: (_: any, record: any) => (
@@ -492,7 +588,11 @@ export const HousingTable: React.FC = () => {
       ),
     },
     {
-      title: "Тех. состояние",
+      title: (
+        <Tooltip title="Тех. состояние">
+          <DashboardOutlined />
+        </Tooltip>
+      ),
       key: "status",
       width: 180,
       render: (_: any, record: any) => {
@@ -500,9 +600,8 @@ export const HousingTable: React.FC = () => {
         const year = parseInt(
           record["Год ввода"] || record["Год постройки"] || "0",
         );
-        let color = COLORS.success;
-        let text = "хорошее";
-
+        let color = COLORS.success,
+          text = "хорошее";
         if (emergency) {
           color = COLORS.danger;
           text = "аварийное";
@@ -519,7 +618,6 @@ export const HousingTable: React.FC = () => {
           color = "#ff7a45";
           text = "ветхое";
         }
-
         return (
           <Space>
             <span
@@ -538,6 +636,26 @@ export const HousingTable: React.FC = () => {
     },
   ];
 
+  const columns = allColumns.filter((col) => visibleColumns.includes(col.key));
+
+  const columnMenuItems = allColumns.map((col) => ({
+    key: col.key,
+    label: (
+      <Checkbox
+        checked={visibleColumns.includes(col.key)}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setVisibleColumns([...visibleColumns, col.key]);
+          } else {
+            setVisibleColumns(visibleColumns.filter((k) => k !== col.key));
+          }
+        }}
+      >
+        {col.title}
+      </Checkbox>
+    ),
+  }));
+
   return (
     <div
       style={{
@@ -546,7 +664,6 @@ export const HousingTable: React.FC = () => {
         minHeight: "100vh",
       }}
     >
-      {/* Верхняя панель с кнопками */}
       <Card
         size="small"
         style={{
@@ -610,6 +727,11 @@ export const HousingTable: React.FC = () => {
           </Space>
 
           <Space>
+            <Dropdown menu={{ items: columnMenuItems }} trigger={["click"]}>
+              <Button icon={<SettingOutlined />} size="small">
+                Колонки
+              </Button>
+            </Dropdown>
             <Tooltip title="Фильтры">
               <Button
                 icon={<FilterOutlined />}
@@ -641,7 +763,6 @@ export const HousingTable: React.FC = () => {
           </Space>
         </Space>
 
-        {/* Активные фильтры */}
         {(housingType ||
           buildingType ||
           emergencyFilter !== undefined ||
@@ -713,38 +834,28 @@ export const HousingTable: React.FC = () => {
         )}
       </Card>
 
-      {/* Выдвижная панель фильтров */}
       <Drawer
         title="🔍 Фильтры жилого фонда"
         placement="right"
         width={400}
         open={filterVisible}
         onClose={() => setFilterVisible(false)}
-        styles={{ body: { padding: 0 } }} // Убираем паддинг у тела дровера, чтобы управлять отступами сами
       >
-        <Space
-          direction="vertical"
-          size="middle"
-          style={{ width: "100%", padding: "0 24px 24px 24px" }} // Добавили отступы: Слева/Справа 24px, Снизу 24px
-        >
+        <Space direction="vertical" size="middle" style={{ padding: "24px" }}>
           <Input
             placeholder="Поиск по адресу"
             value={searchAddress}
             onChange={(e) => setSearchAddress(e.target.value)}
-            prefix={<SearchOutlined style={{ color: COLORS.textSecondary }} />}
+            prefix={<SearchOutlined />}
             size="large"
             allowClear
-            style={{
-              borderRadius: RADIUS.sm,
-              width: THEME.sizes.filterDrawerInputWidth,
-            }}
+            style={{ borderRadius: RADIUS.sm, width: "100%" }}
           />
-
           <Select
             placeholder="Вид жилья"
             value={housingType}
             onChange={setHousingType}
-            style={{ width: THEME.sizes.filterDrawerInputWidth }}
+            style={{ width: "100%" }}
             size="large"
             allowClear
           >
@@ -754,12 +865,11 @@ export const HousingTable: React.FC = () => {
               </Option>
             ))}
           </Select>
-
           <Select
             placeholder="Тип здания"
             value={buildingType}
             onChange={setBuildingType}
-            style={{ width: THEME.sizes.filterDrawerInputWidth }}
+            style={{ width: "100%" }}
             size="large"
             allowClear
           >
@@ -769,20 +879,18 @@ export const HousingTable: React.FC = () => {
               </Option>
             ))}
           </Select>
-
           <Select
             placeholder="Аварийность"
             value={emergencyFilter}
             onChange={setEmergencyFilter}
-            style={{ width: THEME.sizes.filterDrawerInputWidth }}
+            style={{ width: "100%" }}
             size="large"
             allowClear
           >
             <Option value={true}>⚠️ Аварийный</Option>
             <Option value={false}>✅ Не аварийный</Option>
           </Select>
-
-          <Space style={{ width: THEME.sizes.filterDrawerInputWidth }}>
+          <Space style={{ width: "100%" }}>
             <Button
               type="primary"
               icon={<SearchOutlined />}

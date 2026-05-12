@@ -288,14 +288,11 @@ export const OwnersTable: React.FC = () => {
         <Button
           icon={<ArrowLeftOutlined />}
           onClick={() => {
-            navigate("/owners");
-            setSearchText("");
-            setPage(1);
-            setTimeout(() => loadAllData(), 100);
+            navigate("/housing"); // Возврат к жилому фонду
           }}
-          style={{ marginBottom: 16, borderRadius: RADIUS.sm }}
+          style={{ marginBottom: 16 }}
         >
-          Назад ко всем собственникам
+          Назад к реестру домов
           {searchParams.get("house") && ` (дом ${searchParams.get("house")})`}
         </Button>
       )}

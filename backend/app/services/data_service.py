@@ -2083,12 +2083,68 @@ class DataService:
         
         return houses
 
-    def clear_cache(self):
-        """Очистка внутреннего кэша"""
-        self._residents_cache = None
-        self._owners_cache = None
-        self._housing_cache = None
-        print("🧹 Внутренний кэш очищен")
+
+    async def get_housing_with_ownership_stats(
+        self, page: int = 1, page_size: int = 50,
+        search: Optional[str] = None, category: Optional[str] = None,
+        building_type: Optional[str] = None, is_emergency: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Получение жилого фонда с подсчетом квартир по типам собственности"""
+        try:
+            result = await self.get_housing_list(
+                page=page, page_size=page_size,
+                search=search,
+                filters={"Категория": category, "Тип здания": building_type} if category or building_type else None
+            )
+            
+            # Маппинг видов собственности
+            MUNICIPAL_TYPES = ["муниц", "муниципальн", "казн"]
+            PRIVATE_TYPES = ["св-во", "свидетельство", "собствен", "частн","Св-во"]
+            PRIVATIZED_TYPES = ["прив", "приватизир"]
+            
+            for house in result.get("data", []):
+                addr = house.get("Почтовый адрес", "")
+                num = str(house.get("Номер дома", ""))
+                
+                owners = await self.get_owners_by_house(addr, num)
+                
+                municipal = 0
+                private = 0
+                privatized = 0
+                
+                for o in owners:
+                    owner_type = str(o.get("Вид собственности", "")).lower()
+                    apts = int(o.get("Кол-во кв", 1) or 1)
+                    
+                    if any(t in owner_type for t in MUNICIPAL_TYPES):
+                        municipal += apts
+                    elif any(t in owner_type for t in PRIVATIZED_TYPES):
+                        privatized += apts
+                    elif any(t in owner_type for t in PRIVATE_TYPES):
+                        private += apts
+                    else:
+                        # Если тип не распознан — считаем как частное
+                        private += apts
+                
+                house["municipal_apartments"] = municipal
+                house["private_apartments"] = private + privatized  # приватизированные тоже частные
+                
+            return result
+        except Exception as e:
+            print(f"❌ Ошибка: {e}")
+            raise
+
+    async def get_owners_by_house(self, address: str, house_number: str) -> List[Dict]:
+        """Получение собственников конкретного дома"""
+        try:
+            sql = """
+                SELECT data FROM owners 
+                WHERE address_display LIKE %s AND house_number = %s
+            """
+            rows = await mariadb_client.fetch_all(sql, (f"%{address}%", house_number))
+            return [json.loads(r["data"]) if isinstance(r["data"], str) else r["data"] for r in rows]
+        except:
+            return []
 
 
 # Singleton сервис
