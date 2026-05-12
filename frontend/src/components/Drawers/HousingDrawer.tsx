@@ -627,7 +627,7 @@ export const HousingDrawer: React.FC<HousingDrawerProps> = ({
         indicator={<GerbSpinner size={80} animation="pulse" />}
         spinning={loading}
       >
-        {renderContent()}
+        <div style={{ padding: "10px 20px 20px 20px" }}>{renderContent()}</div>
       </Spin>
     </Drawer>
   );

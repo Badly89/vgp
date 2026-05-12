@@ -482,29 +482,13 @@ export const HouseResidents: React.FC = () => {
                           {apartmentChildren} дет.
                         </Tag>
                       </Space>
-                      {owner && (
-                        <Tag
-                          icon={<TeamOutlined />}
-                          style={{
-                            background: COLORS.terracotta,
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: RADIUS.xs,
-                          }}
-                        >
-                          {owner["ФИО"] ||
-                            owner["Наименование"] ||
-                            "Собственник"}
-                        </Tag>
-                      )}
-                      {/* ✅ ИНДИКАТОР МУНИЦИПАЛЬНОГО ЖИЛЬЯ */}
                       {(() => {
                         const municipalInfo = getMunicipalInfo(apartmentKey);
                         return municipalInfo?.isMunicipal ? (
                           <Tag
                             style={{
                               background: COLORS.municipal,
-                              color: "#fff",
+                              color: "#000",
                               border: "none",
                               borderRadius: RADIUS.xs,
                             }}
@@ -522,288 +506,294 @@ export const HouseResidents: React.FC = () => {
                     border: `1px solid ${COLORS.borderLight}`,
                   }}
                 >
-                  {/* ✅ ДОБАВИТЬ КОНТРАСТНУЮ КАРТОЧКУ ЗДЕСЬ */}
-                  {getMunicipalInfo(apartmentKey)?.isMunicipal && (
-                    <Card
-                      size="small"
+                  <Row gutter={16}>
+                    <Col
+                      flex="1"
                       style={{
-                        margin: "0 0 16px 0",
-                        background:
-                          "linear-gradient(135deg, rgba(123, 158, 175, 0.15) 0%, rgba(123, 158, 175, 0.05) 100%)",
-                        border: `2px solid ${COLORS.northernBlue}`,
-                        borderRadius: RADIUS.sm,
-                        boxShadow: "0 2px 12px rgba(123, 158, 175, 0.2)",
+                        borderRight: `1px solid ${COLORS.borderLight}`,
+                        paddingRight: 16,
+                      }}
+                    >
+                      {/* Список жителей */}
+                      <List
+                        dataSource={apartmentItems}
+                        grid={{
+                          gutter: 16,
+                          xs: 1,
+                          sm: 2,
+                          md: 2,
+                          lg: 2,
+                          xl: 3,
+                          xxl: 3,
+                        }}
+                        renderItem={(item: any) => {
+                          const fullName = getFullName(item);
+                          const genderValue = getGender(item);
+                          const phone = item["Телефон"];
+                          const isChildValue =
+                            item["Ребенок"] === "Да" ||
+                            item["Ребенок"] === true;
+                          const categoryValue = item["Категория"];
+                          const relation = item["Родство"];
+
+                          return (
+                            <List.Item key={item._id}>
+                              <Card
+                                hoverable
+                                onClick={() => showDetails(item)}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  cursor: "pointer",
+                                  borderRadius: RADIUS.md,
+                                  border: `1px solid ${COLORS.borderLight}`,
+                                  boxShadow: COLORS.shadowSmall,
+                                  transition: `all ${THEME.animation.fast}`,
+                                }}
+                                bodyStyle={{ padding: "16px" }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor =
+                                    COLORS.terracotta;
+                                  e.currentTarget.style.transform =
+                                    "translateY(-2px)";
+                                  e.currentTarget.style.boxShadow =
+                                    COLORS.shadowMedium;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor =
+                                    COLORS.borderLight;
+                                  e.currentTarget.style.transform =
+                                    "translateY(0)";
+                                  e.currentTarget.style.boxShadow =
+                                    COLORS.shadowSmall;
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    marginBottom: 12,
+                                  }}
+                                >
+                                  <Avatar
+                                    size={48}
+                                    icon={
+                                      genderValue === "Женский" ? (
+                                        <WomanOutlined />
+                                      ) : genderValue === "Мужской" ? (
+                                        <ManOutlined />
+                                      ) : (
+                                        <UserOutlined />
+                                      )
+                                    }
+                                    style={{
+                                      backgroundColor:
+                                        genderValue === "Женский"
+                                          ? COLORS.terracotta // Терракота для женщин
+                                          : genderValue === "Мужской"
+                                            ? COLORS.northernBlue // Северное небо для мужчин
+                                            : COLORS.textMuted,
+                                      marginRight: 12,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div
+                                      style={{
+                                        fontWeight: 600,
+                                        fontSize: 15,
+                                        marginBottom: 4,
+                                        wordBreak: "break-word",
+                                        color: COLORS.textPrimary,
+                                      }}
+                                    >
+                                      {fullName}
+                                    </div>
+                                    <Space size={4} wrap>
+                                      {genderValue && (
+                                        <Tag
+                                          style={{
+                                            margin: 0,
+                                            background:
+                                              genderValue === "Женский"
+                                                ? "rgba(198, 123, 92, 0.1)"
+                                                : "rgba(123, 158, 175, 0.1)",
+                                            color:
+                                              genderValue === "Женский"
+                                                ? COLORS.terracotta
+                                                : COLORS.northernBlue,
+                                            border: "none",
+                                            borderRadius: RADIUS.xs,
+                                            fontSize: 11,
+                                          }}
+                                        >
+                                          {genderValue}
+                                        </Tag>
+                                      )}
+                                      {isChildValue && (
+                                        <Tag
+                                          style={{
+                                            margin: 0,
+                                            background:
+                                              "rgba(212, 149, 106, 0.1)",
+                                            color: COLORS.warning,
+                                            border: "none",
+                                            borderRadius: RADIUS.xs,
+                                            fontSize: 11,
+                                          }}
+                                        >
+                                          Ребенок
+                                        </Tag>
+                                      )}
+                                      {categoryValue && (
+                                        <Tag
+                                          style={{
+                                            margin: 0,
+                                            background:
+                                              "rgba(91, 140, 90, 0.1)",
+                                            color: COLORS.northernAurora,
+                                            border: "none",
+                                            borderRadius: RADIUS.xs,
+                                            fontSize: 11,
+                                          }}
+                                        >
+                                          {categoryValue}
+                                        </Tag>
+                                      )}
+                                      {relation && (
+                                        <Tag
+                                          style={{
+                                            margin: 0,
+                                            background: "rgba(92, 61, 46, 0.1)",
+                                            color: COLORS.primary,
+                                            border: "none",
+                                            borderRadius: RADIUS.xs,
+                                            fontSize: 11,
+                                          }}
+                                        >
+                                          {relation}
+                                        </Tag>
+                                      )}
+
+                                      {/* ✅ Бейдж собственника */}
+                                    </Space>
+                                  </div>
+                                </div>
+                              </Card>
+                            </List.Item>
+                          );
+                        }}
+                      />
+                    </Col>
+                    <Col
+                      style={{
+                        width: 240,
+                        flexShrink: 0,
+                        paddingLeft: 16,
+                        alignSelf: "flex-start",
                       }}
                     >
                       <div
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
+                          fontSize: 11,
+                          color: COLORS.textMuted,
+                          textTransform: "uppercase",
+                          letterSpacing: 1,
+                          marginBottom: 10,
+                          fontWeight: 600,
                         }}
                       >
-                        <Space>
+                        Собственник
+                      </div>
+                      {owner ? (
+                        <div
+                          style={{
+                            padding: "16px",
+                            background: COLORS.background,
+                            borderRadius: RADIUS.sm,
+                            border: `1px solid ${COLORS.borderLight}`,
+                            borderTop: `3px solid ${
+                              String(owner["Вид собственности"] || "")
+                                .toLowerCase()
+                                .includes("муниц")
+                                ? COLORS.northernBlue
+                                : COLORS.warning
+                            }`,
+                            position: "sticky",
+                            top: 80,
+                          }}
+                        >
+                          <div
+                            style={{ textAlign: "center", marginBottom: 10 }}
+                          ></div>
                           <div
                             style={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: RADIUS.xs,
-                              background: COLORS.northernBlue,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              boxShadow: "0 2px 8px rgba(123, 158, 175, 0.4)",
+                              fontWeight: 600,
+                              fontSize: 13,
+                              textAlign: "center",
+                              marginBottom: 6,
+                              wordBreak: "break-word",
                             }}
                           >
-                            <BankOutlined
-                              style={{ color: "#fff", fontSize: 20 }}
-                            />
+                            {owner["ФИО"] ||
+                              owner["Наименование"] ||
+                              "Собственник"}
                           </div>
-                          <div>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                color: COLORS.primaryDark,
-                                fontSize: 15,
-                              }}
-                            >
-                              Муниципальное жилье
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: COLORS.textSecondary,
-                                marginTop: 2,
-                              }}
-                            >
-                              {owner["ФИО"] || owner["Наименование"] || "—"}
-                            </div>
-                          </div>
-                        </Space>
-                        <Space size="large">
-                          <div style={{ textAlign: "center" }}>
-                            <div
-                              style={{
-                                fontSize: 24,
-                                fontWeight: 800,
-                                color: COLORS.northernBlue,
-                                lineHeight: 1,
-                              }}
-                            >
-                              {getMunicipalInfo(apartmentKey)?.municipalArea}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: COLORS.textSecondary,
-                                marginTop: 2,
-                              }}
-                            >
-                              м²
-                            </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: COLORS.textSecondary,
+                              textAlign: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            {owner["Телефон"] && (
+                              <div>📞 {owner["Телефон"]}</div>
+                            )}
+                            {owner["Доля"] && <div>Доля: {owner["Доля"]}</div>}
                           </div>
                           <Tag
                             style={{
-                              background: COLORS.northernBlue,
-                              color: "#fff",
+                              display: "block",
+                              textAlign: "center",
+                              background: String(
+                                owner["Вид собственности"] || "",
+                              )
+                                .toLowerCase()
+                                .includes("муниц")
+                                ? "rgba(123, 158, 175, 0.12)"
+                                : "rgba(91, 140, 90, 0.12)",
+                              color: String(owner["Вид собственности"] || "")
+                                .toLowerCase()
+                                .includes("муниц")
+                                ? COLORS.northernBlue
+                                : COLORS.warning,
                               border: "none",
-                              borderRadius: RADIUS.full,
-                              fontSize: 14,
-                              padding: "6px 16px",
-                              fontWeight: 700,
-                              boxShadow: "0 2px 8px rgba(123, 158, 175, 0.3)",
+                              borderRadius: RADIUS.xs,
+                              fontSize: 11,
+                              whiteSpace: "normal",
+                              padding: "4px 8px",
                             }}
                           >
-                            🏛️ {getMunicipalInfo(apartmentKey)?.municipalCount}{" "}
-                            кв.
+                            {owner["Вид собственности"] || "—"}
                           </Tag>
-                        </Space>
-                      </div>
-                    </Card>
-                  )}
-                  {/* Список жителей */}
-                  <List
-                    dataSource={apartmentItems}
-                    grid={{
-                      gutter: 16,
-                      xs: 1,
-                      sm: 2,
-                      md: 3,
-                      lg: 3,
-                      xl: 4,
-                      xxl: 4,
-                    }}
-                    renderItem={(item: any) => {
-                      const fullName = getFullName(item);
-                      const genderValue = getGender(item);
-                      const phone = item["Телефон"];
-                      const isChildValue =
-                        item["Ребенок"] === "Да" || item["Ребенок"] === true;
-                      const categoryValue = item["Категория"];
-                      const relation = item["Родство"];
-
-                      return (
-                        <List.Item key={item._id}>
-                          <Card
-                            hoverable
-                            onClick={() => showDetails(item)}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              cursor: "pointer",
-                              borderRadius: RADIUS.md,
-                              border: `1px solid ${COLORS.borderLight}`,
-                              boxShadow: COLORS.shadowSmall,
-                              transition: `all ${THEME.animation.fast}`,
-                            }}
-                            bodyStyle={{ padding: "16px" }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor =
-                                COLORS.terracotta;
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                COLORS.shadowMedium;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor =
-                                COLORS.borderLight;
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow =
-                                COLORS.shadowSmall;
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                marginBottom: 12,
-                              }}
-                            >
-                              <Avatar
-                                size={48}
-                                icon={
-                                  genderValue === "Женский" ? (
-                                    <WomanOutlined />
-                                  ) : genderValue === "Мужской" ? (
-                                    <ManOutlined />
-                                  ) : (
-                                    <UserOutlined />
-                                  )
-                                }
-                                style={{
-                                  backgroundColor:
-                                    genderValue === "Женский"
-                                      ? COLORS.terracotta // Терракота для женщин
-                                      : genderValue === "Мужской"
-                                        ? COLORS.northernBlue // Северное небо для мужчин
-                                        : COLORS.textMuted,
-                                  marginRight: 12,
-                                  flexShrink: 0,
-                                }}
-                              />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontWeight: 600,
-                                    fontSize: 15,
-                                    marginBottom: 4,
-                                    wordBreak: "break-word",
-                                    color: COLORS.textPrimary,
-                                  }}
-                                >
-                                  {fullName}
-                                </div>
-                                <Space size={4} wrap>
-                                  {genderValue && (
-                                    <Tag
-                                      style={{
-                                        margin: 0,
-                                        background:
-                                          genderValue === "Женский"
-                                            ? "rgba(198, 123, 92, 0.1)"
-                                            : "rgba(123, 158, 175, 0.1)",
-                                        color:
-                                          genderValue === "Женский"
-                                            ? COLORS.terracotta
-                                            : COLORS.northernBlue,
-                                        border: "none",
-                                        borderRadius: RADIUS.xs,
-                                        fontSize: 11,
-                                      }}
-                                    >
-                                      {genderValue}
-                                    </Tag>
-                                  )}
-                                  {isChildValue && (
-                                    <Tag
-                                      style={{
-                                        margin: 0,
-                                        background: "rgba(212, 149, 106, 0.1)",
-                                        color: COLORS.warning,
-                                        border: "none",
-                                        borderRadius: RADIUS.xs,
-                                        fontSize: 11,
-                                      }}
-                                    >
-                                      Ребенок
-                                    </Tag>
-                                  )}
-                                  {categoryValue && (
-                                    <Tag
-                                      style={{
-                                        margin: 0,
-                                        background: "rgba(91, 140, 90, 0.1)",
-                                        color: COLORS.northernAurora,
-                                        border: "none",
-                                        borderRadius: RADIUS.xs,
-                                        fontSize: 11,
-                                      }}
-                                    >
-                                      {categoryValue}
-                                    </Tag>
-                                  )}
-                                  {relation && (
-                                    <Tag
-                                      style={{
-                                        margin: 0,
-                                        background: "rgba(92, 61, 46, 0.1)",
-                                        color: COLORS.primary,
-                                        border: "none",
-                                        borderRadius: RADIUS.xs,
-                                        fontSize: 11,
-                                      }}
-                                    >
-                                      {relation}
-                                    </Tag>
-                                  )}
-
-                                  {/* ✅ Бейдж собственника */}
-                                  {owner &&
-                                    (owner["ФИО"] || owner["Наименование"]) ===
-                                      fullName && (
-                                      <Tag
-                                        icon={<TeamOutlined />}
-                                        style={{
-                                          margin: 0,
-                                          background: COLORS.terracotta,
-                                          color: "#fff",
-                                          border: "none",
-                                          borderRadius: RADIUS.xs,
-                                          fontSize: 11,
-                                        }}
-                                      >
-                                        Собственник
-                                      </Tag>
-                                    )}
-                                </Space>
-                              </div>
-                            </div>
-                          </Card>
-                        </List.Item>
-                      );
-                    }}
-                  />
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            padding: "16px",
+                            background: COLORS.background,
+                            borderRadius: RADIUS.sm,
+                            textAlign: "center",
+                            fontSize: 12,
+                            color: COLORS.textMuted,
+                          }}
+                        >
+                          Собственник не указан
+                        </div>
+                      )}
+                    </Col>
+                  </Row>
                 </Panel>
               );
             })}

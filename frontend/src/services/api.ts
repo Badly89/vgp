@@ -147,6 +147,17 @@ export const housingApi = {
     const response = await api.get("/housing/categories/list");
     return response.data.categories;
   },
+  getListWithStats: async (params: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    category?: string;
+    building_type?: string;
+    is_emergency?: boolean;
+  }): Promise<HousingListResponse> => {
+    const response = await api.get("/housing/list-with-stats", { params });
+    return response.data;
+  },
 };
 
 // API для собственников
@@ -320,6 +331,11 @@ export const syncApi = {
 
   runSyncNow: async () => {
     const response = await api.post("/sync/schedule/run-now");
+    return response.data;
+  },
+
+  getListWithStats: async (params: any) => {
+    const response = await api.get("/api/housing/list-with-stats", { params });
     return response.data;
   },
 };
