@@ -448,8 +448,8 @@ export const HousingTable: React.FC = () => {
       key: "year",
       width: 100,
       sorter: (a: any, b: any) => {
-        const yearA = parseInt(a["Год ввода"] || a["Год постройки"] || "0");
-        const yearB = parseInt(b["Год ввода"] || b["Год постройки"] || "0");
+        const yearA = parseInt(a["Год ввода"] || a["Год постройки"] || "0", 10);
+        const yearB = parseInt(b["Год ввода"] || b["Год постройки"] || "0", 10);
         return yearA - yearB;
       },
       render: (_: any, record: any) => (
